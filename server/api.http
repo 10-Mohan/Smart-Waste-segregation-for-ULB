@@ -1,0 +1,116 @@
+@baseUrl = http://localhost:5000/api
+
+### Login as worker
+# @name workerLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{"email":"worker@demo.in","password":"Demo@1234"}
+
+### Login as supervisor
+# @name supervisorLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{"email":"supervisor@demo.in","password":"Demo@1234"}
+
+### Login as ULB admin
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{"email":"admin@demo.in","password":"Demo@1234"}
+
+@workerToken = {{workerLogin.response.body.token}}
+@supervisorToken = {{supervisorLogin.response.body.token}}
+@adminToken = {{adminLogin.response.body.token}}
+@householdQr = HH-W01-001
+@householdId = 1
+
+### Current authenticated user
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{workerToken}}
+
+### Health
+GET {{baseUrl}}/health
+
+### List wards
+GET {{baseUrl}}/wards
+Authorization: Bearer {{workerToken}}
+
+### Register household (wardId 1 is Ward 1 after seed reset)
+# @name createHousehold
+POST {{baseUrl}}/households
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{"ownerName":"Demo Household","phone":"9876509001","address":"10 Example Street, Chennai","type":"residential","wardId":1}
+
+### List households
+GET {{baseUrl}}/households?page=1&limit=20
+Authorization: Bearer {{workerToken}}
+
+### Get household by QR code
+GET {{baseUrl}}/households/by-qr/{{householdQr}}
+Authorization: Bearer {{workerToken}}
+
+### Get household by ID
+GET {{baseUrl}}/households/{{householdId}}
+Authorization: Bearer {{workerToken}}
+
+### Get printable QR payload
+GET {{baseUrl}}/households/{{householdId}}/qr
+Authorization: Bearer {{workerToken}}
+
+### Create pickup log
+POST {{baseUrl}}/pickup-logs
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{"clientUuid":"a48ea0d2-8559-4c2d-bef2-22ae0d21fe10","qrCode":"{{householdQr}}","status":"segregated"}
+
+### Batch offline pickup sync
+POST {{baseUrl}}/pickup-logs/batch
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{"logs":[{"clientUuid":"af63872a-558a-46bb-b0e7-4967dc59b103","qrCode":"{{householdQr}}","status":"mixed"}]}
+
+### List pickup logs
+GET {{baseUrl}}/pickup-logs?page=1&limit=20
+Authorization: Bearer {{supervisorToken}}
+
+### Citizen status (use last four digits of registered phone)
+GET {{baseUrl}}/citizen/status?qrCode={{householdQr}}&phoneLast4=1001
+
+### Dashboard summary
+GET {{baseUrl}}/dashboard/summary
+Authorization: Bearer {{supervisorToken}}
+
+### Dashboard ward comparison
+GET {{baseUrl}}/dashboard/wards
+Authorization: Bearer {{supervisorToken}}
+
+### Dashboard daily trends
+GET {{baseUrl}}/dashboard/trends?granularity=day
+Authorization: Bearer {{supervisorToken}}
+
+### Dashboard weekly trends
+GET {{baseUrl}}/dashboard/trends?granularity=week
+Authorization: Bearer {{supervisorToken}}
+
+### Dashboard hotspots
+GET {{baseUrl}}/dashboard/hotspots
+Authorization: Bearer {{supervisorToken}}
+
+### Dashboard violations
+GET {{baseUrl}}/dashboard/violations?page=1&limit=20
+Authorization: Bearer {{supervisorToken}}
+
+### Dashboard rejection reasons
+GET {{baseUrl}}/dashboard/reasons
+Authorization: Bearer {{supervisorToken}}
+
+### Download SBM-style CSV
+GET {{baseUrl}}/dashboard/export.csv
+Authorization: Bearer {{supervisorToken}}

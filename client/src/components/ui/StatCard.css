@@ -1,0 +1,34 @@
+.ui-stat-card {
+  min-width: 0;
+  padding: var(--space-6);
+  border-top: 2px solid var(--color-brand);
+  background: var(--color-surface);
+}
+
+.ui-stat-card__value {
+  color: var(--color-brand-strong);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.ui-stat-card__label {
+  margin-top: var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--type-sm);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ui-stat-card__trend {
+  margin-top: var(--space-2);
+  color: var(--color-good);
+  font-size: var(--type-xs);
+  font-weight: 700;
+}
+
+.ui-stat-card__note {
+  margin-top: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--type-xs);
+}

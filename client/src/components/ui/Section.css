@@ -1,0 +1,7 @@
+.ui-section {
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+}
+
+.ui-section--tinted {
+  background: var(--color-surface-alt);
+}

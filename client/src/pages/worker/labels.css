@@ -1,0 +1,22 @@
+.worker-labels { min-height: calc(100dvh - var(--header-height)); padding-block: var(--space-5); }
+.worker-labels__controls { display: flex; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-5); }
+.worker-label-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.worker-print-label { display: grid; min-width: 0; min-height: 16rem; align-content: center; justify-items: center; gap: var(--space-2); padding: var(--space-4); border: 1px dashed var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); text-align: center; page-break-inside: avoid; break-inside: avoid; }
+.worker-print-label__code { overflow-wrap: anywhere; color: var(--color-brand-strong); font-family: ui-monospace, 'Cascadia Mono', monospace; font-size: var(--type-xl); font-weight: 800; }
+.worker-print-label__owner { font-size: var(--type-sm); font-weight: 700; }
+.worker-print-label__address,.worker-print-label__ward { color: var(--color-ink-muted); font-size: var(--type-xs); overflow-wrap: anywhere; }
+
+@media (max-width: 32rem) {
+  .worker-label-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@page { size: A4; margin: 12mm; }
+
+@media print {
+  html,body { min-width: 0; background: #fff; }
+  .worker-labels { min-height: 0; padding: 0; }
+  .worker-labels__controls,.app-toolbar,.worker-tabbar,.public-header,.public-footer,.no-print { display: none !important; }
+  .worker-label-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5mm; }
+  .worker-print-label { min-height: 82mm; border: 1px dashed #666; border-radius: 0; background: #fff; }
+  .worker-print-label svg { width: 120px; height: 120px; }
+}

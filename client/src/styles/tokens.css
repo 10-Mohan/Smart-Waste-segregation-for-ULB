@@ -1,0 +1,55 @@
+:root {
+  color-scheme: light;
+  --color-background: #f4f5ed;
+  --color-surface: #fffefa;
+  --color-surface-alt: #e8eee7;
+  --color-ink: #1c352f;
+  --color-ink-muted: #52645e;
+  --color-brand: #205346;
+  --color-brand-strong: #173f35;
+  --color-brand-soft: #dce9e2;
+  --color-accent: #963f2b;
+  --color-accent-soft: #f3e2db;
+  --color-good: #23623f;
+  --color-good-soft: #e4f1e7;
+  --color-warn: #754900;
+  --color-warn-soft: #fff1cf;
+  --color-bad: #9a3028;
+  --color-bad-soft: #fae7e4;
+  --color-neutral: #455850;
+  --color-neutral-soft: #e9eeea;
+  --color-border: #cdd7d0;
+  --color-focus: #a0472c;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', sans-serif;
+  --type-xs: 0.75rem;
+  --type-sm: 0.875rem;
+  --type-md: 1rem;
+  --type-lg: clamp(1.125rem, 1.6vw, 1.375rem);
+  --type-xl: clamp(1.5rem, 3vw, 2rem);
+  --type-2xl: clamp(2rem, 4.8vw, 3.5rem);
+  --type-hero: clamp(2.75rem, 6.2vw, 5.25rem);
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 3px rgb(28 53 47 / 8%);
+  --shadow-md: 0 12px 32px rgb(28 53 47 / 10%);
+  --shadow-nav: 0 5px 16px rgb(28 53 47 / 7%);
+  --content-width: 70rem;
+  --page-gutter: clamp(1.125rem, 4vw, 3rem);
+  --header-height: 4.75rem;
+}
+
+/* Breakpoints: compact mobile < 40rem, tablet 40-56rem, desktop >= 56rem. */

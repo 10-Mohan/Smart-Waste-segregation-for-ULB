@@ -1,0 +1,15 @@
+node_modules/
+**/node_modules/
+.env
+**/.env
+server/database.sqlite
+server/*.sqlite
+server/*.sqlite3
+server/data/*.sqlite
+server/data/*.sqlite
+server/data/*.sqlite3
+dist/
+**/dist/
+coverage/
+.DS_Store
+Thumbs.db

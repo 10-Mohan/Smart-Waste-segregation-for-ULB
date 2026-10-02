@@ -1,0 +1,23 @@
+.ui-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-ink-muted);
+  font-size: var(--type-sm);
+}
+
+.ui-spinner__ring {
+  width: 1.25rem;
+  aspect-ratio: 1;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-brand);
+  border-radius: 50%;
+  animation: ui-spin 700ms linear infinite;
+}
+
+.ui-spinner--sm .ui-spinner__ring { width: 0.9rem; }
+.ui-spinner--lg .ui-spinner__ring { width: 2rem; border-width: 3px; }
+
+.ui-spinner__label:empty { display: none; }
+
+@keyframes ui-spin { to { transform: rotate(360deg); } }

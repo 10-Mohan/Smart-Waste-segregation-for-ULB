@@ -1,0 +1,18 @@
+.ui-callout {
+  padding: var(--space-5) var(--space-6);
+  border-left: 4px solid currentColor;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: var(--type-sm);
+}
+
+.ui-callout--info { background: var(--color-brand-soft); color: var(--color-brand-strong); }
+.ui-callout--warning { background: var(--color-warn-soft); color: var(--color-warn); }
+.ui-callout--note { background: var(--color-neutral-soft); color: var(--color-neutral); }
+
+.ui-callout__title {
+  margin-bottom: var(--space-2);
+  color: inherit;
+  font-family: var(--font-body);
+  font-size: var(--type-md);
+  font-weight: 700;
+}

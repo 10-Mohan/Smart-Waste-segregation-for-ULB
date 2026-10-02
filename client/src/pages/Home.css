@@ -1,0 +1,35 @@
+.home-launcher {
+  display: grid;
+  min-height: calc(100dvh - var(--header-height) - 3.5rem);
+  align-content: center;
+  background: radial-gradient(#b9c9bc 0.7px, transparent 0.7px);
+  background-size: 20px 20px;
+}
+
+.home-launcher > .ui-container { width: min(100% - (var(--page-gutter) * 2), 62rem); }
+.home-launcher__content { display: grid; justify-items: start; gap: var(--space-5); }
+.home-launcher .eyebrow { color: var(--color-accent); font-size: var(--type-xs); font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.home-launcher h1 { font-size: clamp(2.75rem, 6vw, 4.5rem); }
+.home-launcher__subtitle { max-width: 42rem; color: var(--color-ink-muted); font-size: var(--type-lg); }
+.home-launcher__cards { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); margin-block: var(--space-4); }
+.home-launcher__card { display: grid; min-height: 16rem; align-content: start; justify-items: start; gap: var(--space-3); border-top: 3px solid var(--color-brand); }
+.home-launcher__card-kicker { color: var(--color-accent); font-size: var(--type-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.home-launcher__card h2 { font-size: var(--type-xl); }
+.home-launcher__card > p:not(.home-launcher__card-kicker) { flex: 1; color: var(--color-ink-muted); font-size: var(--type-sm); }
+.home-launcher__card .ui-button { margin-top: var(--space-2); }
+.system-status { gap: var(--space-2); }
+.system-status__dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; }
+.system-status__dot.is-checking { animation: status-pulse 1.2s ease-in-out infinite alternate; }
+
+@keyframes status-pulse { to { opacity: 0.35; } }
+
+@media (max-width: 44rem) {
+  .home-launcher { min-height: calc(100dvh - var(--header-height) - 3rem); }
+  .home-launcher__cards { grid-template-columns: minmax(0, 1fr); }
+  .home-launcher__card { min-height: 13rem; }
+}
+
+@media (max-width: 27rem) {
+  .home-launcher h1 { font-size: 2.6rem; }
+  .home-launcher__card .ui-button { width: 100%; }
+}

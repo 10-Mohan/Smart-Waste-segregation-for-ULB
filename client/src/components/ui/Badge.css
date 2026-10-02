@@ -1,0 +1,16 @@
+.ui-badge {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--type-xs);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.ui-badge--good { background: var(--color-good-soft); color: var(--color-good); }
+.ui-badge--warn { background: var(--color-warn-soft); color: var(--color-warn); }
+.ui-badge--bad { background: var(--color-bad-soft); color: var(--color-bad); }
+.ui-badge--neutral { background: var(--color-neutral-soft); color: var(--color-neutral); }

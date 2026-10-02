@@ -1,0 +1,9 @@
+.qr-camera { display: grid; gap: var(--space-3); }
+.qr-camera__viewport { position: relative; display: grid; min-height: 16rem; max-height: 55vh; place-items: center; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #102a24; }
+.qr-camera__viewport > div[id] { width: 100%; }
+.qr-camera__viewport video { width: 100% !important; max-height: 55vh; object-fit: cover; }
+.qr-camera__placeholder { position: absolute; color: #fffefa; font-size: var(--type-sm); }
+.qr-camera__viewport:has(video) .qr-camera__placeholder { display: none; }
+.qr-camera__message,.qr-camera__alternative { color: var(--color-ink-muted); font-size: var(--type-sm); }
+.qr-camera__alternative { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; }
+.qr-camera__button { min-height: 3rem; }

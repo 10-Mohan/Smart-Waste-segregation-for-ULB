@@ -1,0 +1,24 @@
+.app-toolbar {
+  min-height: var(--header-height);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-toolbar__inner,
+.app-toolbar__account {
+  display: flex;
+  min-height: var(--header-height);
+  align-items: center;
+}
+
+.app-toolbar__inner { justify-content: space-between; gap: var(--space-4); }
+.app-toolbar__brand { color: var(--color-brand-strong); font-weight: 700; text-decoration: none; }
+.app-toolbar__account { flex-wrap: wrap; justify-content: end; gap: var(--space-3); }
+.app-toolbar__name { color: var(--color-ink); font-size: var(--type-sm); font-weight: 600; }
+.app-layout__main { min-height: calc(100vh - var(--header-height)); }
+
+@media (max-width: 34rem) {
+  .app-toolbar__inner { align-items: start; padding-block: var(--space-3); }
+  .app-toolbar__account { gap: var(--space-2); }
+  .app-toolbar__name { max-width: 7rem; overflow-wrap: anywhere; }
+}

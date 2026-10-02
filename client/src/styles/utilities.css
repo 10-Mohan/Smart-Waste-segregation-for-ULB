@@ -1,0 +1,32 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border: 0;
+}
+
+.text-muted {
+  color: var(--color-ink-muted);
+}
+
+.stack-sm {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stack-md {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}

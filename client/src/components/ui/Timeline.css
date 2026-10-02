@@ -1,0 +1,61 @@
+.ui-timeline {
+  display: grid;
+  gap: var(--space-7, 1.75rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-timeline__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.ui-timeline__item:not(:last-child)::after {
+  position: absolute;
+  top: 2.5rem;
+  bottom: calc(-1 * var(--space-7, 1.75rem));
+  left: 1.2rem;
+  width: 1px;
+  background: var(--color-border);
+  content: '';
+}
+
+.ui-timeline__marker {
+  display: grid;
+  width: 2.5rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--color-brand);
+  border-radius: 50%;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-strong);
+  font-size: var(--type-xs);
+  font-weight: 700;
+}
+
+.ui-timeline__content {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.ui-timeline__content h3 {
+  font-family: var(--font-body);
+  font-size: var(--type-md);
+  font-weight: 700;
+}
+
+.ui-timeline__content > p:not(.ui-timeline__date) {
+  color: var(--color-ink-muted);
+  font-size: var(--type-sm);
+}
+
+.ui-timeline__date,
+.ui-timeline__status {
+  color: var(--color-accent);
+  font-size: var(--type-xs);
+  font-weight: 700;
+}

@@ -1,0 +1,26 @@
+.ui-tabs__list {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ui-tabs__tab {
+  flex: 0 0 auto;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-size: var(--type-sm);
+  font-weight: 700;
+}
+
+.ui-tabs__tab[aria-selected='true'] {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-brand-strong);
+}
+
+.ui-tabs__panel {
+  padding-block: var(--space-5);
+}
