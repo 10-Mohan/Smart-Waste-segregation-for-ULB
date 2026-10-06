@@ -20,7 +20,7 @@ const periodValidation = [
   query('to').optional().isISO8601().withMessage('to must be an ISO 8601 date.'),
   query('to').custom((to, { req }) => !to || !req.query.from || new Date(to) >= new Date(req.query.from))
     .withMessage('to must be on or after from.'),
-  query('wardId').optional().isInt({ min: 1 }),
+  query('wardId').optional({ checkFalsy: true }).isInt({ min: 1 }),
 ];
 
 router.get('/export.csv', ...dashboardAccess, validate(...periodValidation), asyncHandler(exportCsv));

@@ -8,10 +8,11 @@
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
     "install:all": "npm install --prefix server && npm install --prefix client",
-    "demo:reset": "npm --prefix server run seed -- --reset",
+    "demo:reset": "npm --prefix server run seed -- --reset --history",
     "start:prod": "npm --prefix client run build && npm --prefix server start"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "puppeteer-core": "^25.12.0"
   }
 }

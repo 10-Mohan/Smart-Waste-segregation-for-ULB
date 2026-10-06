@@ -55,9 +55,65 @@ function makeClientUuid(sequence) {
   return `00000000-0000-4000-8000-${String(sequence).padStart(12, '0')}`;
 }
 
+const withHistory = process.argv.includes('--history');
+
 function buildPickupEvents(householdByQrCode) {
   const events = [];
   let sequence = 0;
+
+  if (withHistory) {
+    const ward1 = Array.from(householdByQrCode.values()).filter(h => h.qrCode.includes('W01'));
+    const ward2 = Array.from(householdByQrCode.values()).filter(h => h.qrCode.includes('W02'));
+    
+    // Generate about 150 historical logs over the past 60 days (excluding the last 14 days covered by statusPlans)
+    const startDate = Date.now() - 60 * dayInMilliseconds;
+    const endDate = Date.now() - 14 * dayInMilliseconds;
+    const duration = endDate - startDate;
+    
+    for (let i = 0; i < 150; i++) {
+      sequence += 1;
+      const progress = i / 150; // 0 to 1
+      const loggedAt = new Date(startDate + progress * duration);
+      
+      const isWard1 = Math.random() > 0.5;
+      let status;
+      let household;
+      let reason = null;
+      let note = null;
+      
+      if (isWard1) {
+        household = ward1[Math.floor(Math.random() * ward1.length)];
+        // Improving trend: 45% -> 75%
+        const probSegregated = 0.45 + (0.30 * progress);
+        status = Math.random() < probSegregated ? 'segregated' : (Math.random() < 0.6 ? 'mixed' : 'rejected');
+      } else {
+        // Repeat offenders in Ward 2 (indices 0 and 1)
+        const isRepeatOffender = Math.random() < 0.4;
+        household = isRepeatOffender 
+          ? ward2[Math.floor(Math.random() * 2)] 
+          : ward2[Math.floor(Math.random() * ward2.length)];
+          
+        const r = Math.random();
+        if (isRepeatOffender) {
+          status = r < 0.2 ? 'segregated' : (r < 0.7 ? 'mixed' : 'rejected');
+        } else {
+          status = r < 0.4 ? 'segregated' : (r < 0.8 ? 'mixed' : 'rejected');
+        }
+      }
+      
+      if (status === 'rejected') reason = rejectionReasons[sequence % rejectionReasons.length];
+      if (status === 'mixed') note = 'Please separate wet and dry waste for the next collection.';
+      
+      events.push({
+        clientUuid: makeClientUuid(sequence),
+        household,
+        status,
+        reason,
+        note,
+        loggedAt,
+      });
+    }
+  }
 
   for (const plan of statusPlans) {
     const wardHouseholds = householdDefinitions

@@ -12,6 +12,7 @@ const Citizen = lazy(() => import('./pages/citizen/Citizen.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Worker = lazy(() => import('./pages/Worker.jsx'));
 const WorkerLabels = lazy(() => import('./pages/worker/LabelsPage.jsx'));
+const Dashboard = lazy(() => import('./pages/dashboard/Dashboard.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
 function PageFallback() {
@@ -33,6 +34,9 @@ export default function App() {
           <Route element={<ProtectedRoute roles={['worker']}><AppLayout /></ProtectedRoute>}>
             <Route path="/worker" element={<Worker />} />
             <Route path="/worker/labels" element={<WorkerLabels />} />
+          </Route>
+          <Route element={<ProtectedRoute roles={['supervisor', 'ulb_admin']}><AppLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Routes>
       </Suspense>

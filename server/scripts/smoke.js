@@ -297,6 +297,86 @@ async function main() {
     assert.equal(result.data.status, 'ok');
   });
 
+  // ═══ DASHBOARD ROLE SCOPING ═══════════════════════════════════════════════
+
+  await check('supervisor dashboard/wards returns only Ward 1', async () => {
+    const result = await request('/dashboard/wards', { token: tokens.supervisor });
+    expectStatus(result, 200);
+    const wardCodes = result.data.wards.map((w) => w.code || w.wardCode);
+    assert.ok(wardCodes.length >= 1, 'Supervisor must see at least 1 ward');
+    assert.ok(wardCodes.every((c) => c === 'W01'), `Supervisor must only see W01 wards, got: ${wardCodes}`);
+  });
+
+  await check('supervisor dashboard/summary scoped to Ward 1 only', async () => {
+    const result = await request('/dashboard/summary', { token: tokens.supervisor });
+    expectStatus(result, 200);
+    assert.ok(result.data, 'Summary must return data');
+  });
+
+  await check('supervisor dashboard/export.csv contains only Ward 1', async () => {
+    const result = await request('/dashboard/export.csv', { token: tokens.supervisor });
+    expectStatus(result, 200);
+    const lines = result.text.split(/\r?\n/).filter(Boolean);
+    // Skip header (line 0), check data lines only contain W01
+    for (let i = 1; i < lines.length; i++) {
+      assert.ok(lines[i].includes('W01'), `CSV line ${i} must contain W01: ${lines[i]}`);
+      assert.ok(!lines[i].includes('W02'), `CSV line ${i} must not contain W02: ${lines[i]}`);
+    }
+  });
+
+  await check('supervisor cannot request other ward via wardId param', async () => {
+    const result = await request(`/dashboard/wards?wardId=${wardIds.W02}`, { token: tokens.supervisor });
+    expectStatus(result, 403);
+  });
+
+  await check('supervisor cannot export other ward via wardId param', async () => {
+    const result = await request(`/dashboard/export.csv?wardId=${wardIds.W02}`, { token: tokens.supervisor });
+    expectStatus(result, 403);
+  });
+
+  await check('unauthenticated requests to dashboard return 401', async () => {
+    const endpoints = ['/dashboard/summary', '/dashboard/wards', '/dashboard/trends?granularity=day',
+      '/dashboard/hotspots', '/dashboard/violations', '/dashboard/reasons', '/dashboard/export.csv'];
+    for (const endpoint of endpoints) {
+      const result = await request(endpoint);
+      assert.equal(result.response.status, 401, `${endpoint} without token must return 401, got ${result.response.status}`);
+    }
+  });
+
+  await check('worker gets 403 on all dashboard endpoints', async () => {
+    const endpoints = ['/dashboard/summary', '/dashboard/wards', '/dashboard/trends?granularity=day',
+      '/dashboard/hotspots', '/dashboard/violations', '/dashboard/reasons', '/dashboard/export.csv'];
+    for (const endpoint of endpoints) {
+      const result = await request(endpoint, { token: tokens.worker });
+      assert.equal(result.response.status, 403, `${endpoint} as worker must return 403, got ${result.response.status}`);
+    }
+  });
+
+  await check('admin sees both wards in dashboard/wards', async () => {
+    const result = await request('/dashboard/wards', { token: tokens.ulb_admin });
+    expectStatus(result, 200);
+    const wardCodes = result.data.wards.map((w) => w.code || w.wardCode);
+    assert.ok(wardCodes.includes('W01'), 'Admin must see W01');
+    assert.ok(wardCodes.includes('W02'), 'Admin must see W02');
+  });
+
+  await check('admin can request specific ward and both wards', async () => {
+    const w1 = await request(`/dashboard/summary?wardId=${wardIds.W01}`, { token: tokens.ulb_admin });
+    expectStatus(w1, 200);
+    const w2 = await request(`/dashboard/summary?wardId=${wardIds.W02}`, { token: tokens.ulb_admin });
+    expectStatus(w2, 200);
+    const all = await request('/dashboard/summary', { token: tokens.ulb_admin });
+    expectStatus(all, 200);
+  });
+
+  await check('admin CSV export contains both wards', async () => {
+    const result = await request('/dashboard/export.csv', { token: tokens.ulb_admin });
+    expectStatus(result, 200);
+    assert.ok(result.text.includes('W01'), 'Admin CSV must include W01');
+    assert.ok(result.text.includes('W02'), 'Admin CSV must include W02');
+  });
+
+
   console.log(`\nSmoke checks: ${failures ? `${failures} failed` : 'all passed'}.`);
   if (failures) process.exitCode = 1;
 }

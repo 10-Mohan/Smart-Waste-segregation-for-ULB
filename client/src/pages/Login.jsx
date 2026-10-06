@@ -10,14 +10,20 @@ import SectionHeader from '../components/ui/SectionHeader.jsx';
 import Spinner from '../components/ui/Spinner.jsx';
 import './Login.css';
 
-const demos = [{ role: 'Worker', email: 'worker@demo.in' }];
+const demos = [
+  { role: 'Worker', email: 'worker@demo.in' },
+  { role: 'Supervisor', email: 'supervisor@demo.in' },
+  { role: 'Admin', email: 'admin@demo.in' }
+];
 
-function routeForRole() {
-  return '/worker';
+function routeForRole(role) {
+  if (role === 'worker') return '/worker';
+  if (role === 'supervisor' || role === 'ulb_admin') return '/dashboard';
+  return '/';
 }
 
 export default function Login() {
-  const { login, logout, user, loading: authLoading } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -27,7 +33,7 @@ export default function Login() {
   useDocumentTitle('Login');
 
   useEffect(() => {
-    if (!authLoading && user?.role === 'worker') {
+    if (!authLoading && user) {
       navigate(location.state?.from?.pathname || routeForRole(user.role), { replace: true });
     }
   }, [authLoading, location.state, navigate, user]);
@@ -44,10 +50,8 @@ export default function Login() {
     setSubmitting(true);
     try {
       const signedInUser = await login(email.trim(), password);
-      if (signedInUser.role === 'worker') {
-        const destination = location.state?.from?.pathname || routeForRole(signedInUser.role);
-        navigate(destination, { replace: true });
-      }
+      const destination = location.state?.from?.pathname || routeForRole(signedInUser.role);
+      navigate(destination, { replace: true });
     } catch (requestError) {
       setError(requestError.response?.data?.error?.message || 'Unable to sign in. Check your connection and try again.');
     } finally {
@@ -55,17 +59,8 @@ export default function Login() {
     }
   }
 
-  if (user && user.role !== 'worker') {
-    return (
-      <Container className="login-page login-page--limited">
-        <SectionHeader
-          eyebrow="Limited access"
-          title="This version includes worker and citizen views"
-          lead="Your account is signed in, but this version does not include a supervisor or administrator workspace."
-        />
-        <Button type="button" variant="secondary" onClick={logout}>Logout</Button>
-      </Container>
-    );
+  if (user) {
+    return null; // Will redirect in useEffect
   }
 
   return (

@@ -206,6 +206,7 @@ export async function getHotspots({ from, to, wardId }) {
     const household = householdById.get(Number(row.householdId));
     return {
       householdId: household.id,
+      householdCode: household.qrCode,
       ownerName: household.ownerName,
       wardCode: household.ward.code,
       wardName: household.ward.name,

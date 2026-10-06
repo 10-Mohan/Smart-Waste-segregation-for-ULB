@@ -64,6 +64,9 @@ function Navigation() {
             : <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="2" /></svg>}
         </button>
         <nav className="public-nav__desktop" aria-label="Main navigation">
+          {(user?.role === 'supervisor' || user?.role === 'ulb_admin') && (
+            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'is-active' : ''}>Dashboard</NavLink>
+          )}
           <NavLink to="/citizen" className={({ isActive }) => isActive ? 'is-active' : ''}>Citizen</NavLink>
           <NavLink to="/worker" className={({ isActive }) => isActive ? 'is-active' : ''}>Worker</NavLink>
           {user
@@ -74,6 +77,9 @@ function Navigation() {
       <div className={`public-nav__mobile-panel${mobileOpen ? ' is-open' : ''}`} id="public-mobile-menu" hidden={!mobileOpen}>
         <Container>
           <nav aria-label="Mobile navigation">
+            {(user?.role === 'supervisor' || user?.role === 'ulb_admin') && (
+              <NavLink to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>
+            )}
             <NavLink to="/citizen" onClick={closeMenu}>Citizen</NavLink>
             <NavLink to="/worker" onClick={closeMenu}>Worker</NavLink>
             {user

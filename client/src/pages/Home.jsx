@@ -44,6 +44,9 @@ export default function Home() {
             <Button to="/citizen" variant="secondary">Open citizen view</Button>
           </Card>
         </div>
+        <div className="home-launcher__staff-link" style={{ textAlign: 'center', marginTop: '1.5rem', marginBottom: '1rem' }}>
+          <Button to="/login" variant="text" style={{ fontSize: '0.875rem', textDecoration: 'underline' }}>ULB staff? Sign in</Button>
+        </div>
         <SystemStatus />
       </div>
     </Section>

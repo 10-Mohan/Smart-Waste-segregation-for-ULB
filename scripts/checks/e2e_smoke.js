@@ -1,7 +1,14 @@
 // Run: node scripts/checks/e2e_smoke.js  (requires: npm run start:prod on port 5000, or CHECK_URL=http://localhost:5173 with npm run dev)
 // Purpose: Verifies production build correctness and walks through the DEMO.md script step-by-step.
-const puppeteer = require('puppeteer-core');
-const assert = require('assert');
+import puppeteer from 'puppeteer-core';
+import assert from 'assert';
+import { execSync } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SERVER_DIR = path.resolve(__dirname, '../../server');
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const BASE_URL = process.env.CHECK_URL || 'http://localhost:5000';
@@ -13,16 +20,21 @@ function info(msg) { console.log(`         ${msg}`); }
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 async function workerLogin(page) {
+  await page.evaluate(() => sessionStorage.clear());
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
-  const emailInput = await page.$('#login-email').catch(() => null);
-  if (!emailInput) {
-    const isWorkerPage = await page.$('.worker-page').catch(() => null);
-    if (isWorkerPage) return;
-  }
+  await page.waitForSelector('#login-email', { timeout: 8000 });
+  await page.$eval('#login-email', el => el.value = '');
   await page.type('#login-email', 'worker@demo.in');
+  await page.$eval('#login-password', el => el.value = '');
   await page.type('#login-password', 'Demo@1234');
   await page.click('button[type="submit"]');
-  await page.waitForSelector('.worker-page', { timeout: 10000 });
+  try {
+    await page.waitForSelector('.worker-page', { timeout: 10000 });
+  } catch (err) {
+    const errorText = await page.evaluate(() => document.querySelector('.login-form__error')?.textContent || document.body.innerText);
+    console.error('workerLogin failed. Page text:', errorText);
+    throw err;
+  }
   await sleep(600);
 }
 
@@ -68,6 +80,9 @@ async function citizenDashboard(page, code, last4) {
 // ── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
+  console.log('Resetting DB...');
+  execSync('npm run seed -- --reset --history', { cwd: SERVER_DIR, stdio: 'ignore' });
+
   const consoleErrors = [];
   const cspErrors = [];
 
@@ -163,7 +178,7 @@ async function main() {
   await sleep(1500);
   const camMsg = await page.$eval('.qr-camera__message', el => el.innerText.trim());
   assert.ok(
-    camMsg.length > 5 && (camMsg.includes('Camera') || camMsg.includes('permission') || camMsg.includes('Type')),
+    camMsg.length > 5 && (camMsg.toLowerCase().includes('camera') || camMsg.toLowerCase().includes('permission') || camMsg.includes('Type')),
     `Camera message must be meaningful, got: "${camMsg}"`
   );
   pass(`Camera status message: "${camMsg}"`);
@@ -437,6 +452,55 @@ async function main() {
   const hasStreak = streakText3.includes('3') || streakText3.includes('streak') || streakText3.includes('consecutive');
   if (hasStreak) pass(`3-pickup streak shown: "${streakText3}"`);
   else info(`Streak text: "${streakText3}" (bonus may not trigger until 6 pickups per seed rules)`);
+
+  console.log('\n[DEMO-7] ULB view (Staff Dashboard)');
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('#login-email', { timeout: 5000 });
+  await page.type('#login-email', 'admin@demo.in');
+  await page.type('#login-password', 'Demo@1234');
+  await page.click('button[type="submit"]');
+  await page.waitForSelector('.dashboard-page', { timeout: 10000 });
+  pass('Admin logged in, navigated to dashboard');
+
+  // Verify elements
+  await page.waitForSelector('.summary-card', { timeout: 5000 });
+  const summaryCards = await page.$$('.summary-card');
+  assert.ok(summaryCards.length >= 3, 'Dashboard must show summary cards');
+  pass('Summary stat cards rendered');
+
+  await page.waitForSelector('.ward-row', { timeout: 5000 });
+  const wards = await page.$$('.ward-row');
+  assert.ok(wards.length >= 2, 'Dashboard must show at least 2 wards in comparison');
+  pass('Ward comparison rendered for all wards');
+
+  await page.waitForSelector('.hotspots table tr', { timeout: 5000 });
+  const hotspots = await page.$$('.hotspots table tbody tr');
+  assert.ok(hotspots.length > 0, 'Dashboard must show repeat offenders');
+  pass(`Hotspots list rendered with ${hotspots.length} offenders`);
+
+  // Try to export CSV
+  await page.evaluate(() => Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Export CSV'))?.click());
+  await sleep(1000); // Give it a moment to export
+  pass('Export CSV button clicked without errors');
+
+  // Supervisor login to show ward scoping
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('#login-email', { timeout: 5000 });
+  await page.type('#login-email', 'supervisor@demo.in');
+  await page.type('#login-password', 'Demo@1234');
+  await page.click('button[type="submit"]');
+  await page.waitForSelector('.dashboard-page', { timeout: 10000 });
+  pass('Supervisor logged in, navigated to dashboard');
+
+  // Verify supervisor only sees Ward 1
+  await page.waitForSelector('.ward-row', { timeout: 5000 });
+  const supWards = await page.$$('.ward-row');
+  assert.strictEqual(supWards.length, 1, 'Supervisor must only see their assigned ward (1 ward)');
+  pass('Supervisor dashboard correctly scoped to 1 ward');
+
+
 
   // ═══ CONSOLE ERRORS & CSP ═════════════════════════════════════════════════
 

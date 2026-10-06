@@ -1,6 +1,6 @@
 // Run: node scripts/checks/responsive_check.js  (requires: npm run dev or start:prod running on CHECK_URL)
 // Purpose: Tests horizontal overflow at 360/375/412/768/1280px viewports across all pages.
-const puppeteer = require('puppeteer-core');
+import puppeteer from 'puppeteer-core';
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const BASE_URL = process.env.CHECK_URL || 'http://localhost:5173';

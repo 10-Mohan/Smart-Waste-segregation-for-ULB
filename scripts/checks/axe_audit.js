@@ -1,9 +1,13 @@
 // Run: node scripts/checks/axe_audit.js  (requires: npm run dev, Chrome, axe-core installed in client/)
 // Purpose: Audits all pages and sub-views for serious/critical ARIA violations using axe-core.
-const puppeteer = require('puppeteer-core');
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import puppeteer from 'puppeteer-core';
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const AXE_SOURCE = (() => {
@@ -15,7 +19,7 @@ const AXE_SOURCE = (() => {
   }
   throw new Error('axe-core not found. Run: npm --prefix client install');
 })();
-const BASE_URL = process.env.CHECK_URL || 'http://localhost:5173';
+const BASE_URL = process.env.CHECK_URL || 'http://localhost:5000';
 const SERVER_DIR = path.resolve(__dirname, '../../server');
 
 async function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
@@ -88,8 +92,31 @@ async function main() {
   }
 
   await page.goto(`${BASE_URL}/worker/labels`, { waitUntil: 'networkidle0' });
-  await sleep(600);
+  await page.waitForSelector('.worker-labels', { timeout: 8000 });
+  await sleep(1000);
   await runAxe(page, 'Worker Labels (/worker/labels)');
+
+  // ═══ Dashboard as Admin ════════════════════════════════════════════════════
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('#login-email', { timeout: 5000 });
+  await page.type('#login-email', 'admin@demo.in');
+  await page.type('#login-password', 'Demo@1234');
+  await page.click('button[type="submit"]');
+  await page.waitForSelector('.dashboard-page', { timeout: 10000 });
+  await sleep(1500);
+  await runAxe(page, 'Dashboard (admin)');
+
+  // ═══ Dashboard as Supervisor ═══════════════════════════════════════════════
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('#login-email', { timeout: 5000 });
+  await page.type('#login-email', 'supervisor@demo.in');
+  await page.type('#login-password', 'Demo@1234');
+  await page.click('button[type="submit"]');
+  await page.waitForSelector('.dashboard-page', { timeout: 10000 });
+  await sleep(1500);
+  await runAxe(page, 'Dashboard (supervisor)');
 
   await browser.close();
   console.log(`\nTotal serious/critical violations: ${totalViolations}`);
