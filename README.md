@@ -28,26 +28,81 @@ npm run start:prod
 
 ## Environment Variables
 
-### Server (`server/.env`)
+### Server (`server/.env` or Vercel Environment Variables)
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `5000` | Port for the Express API server |
+| `PORT` | `5000` | Port for the Express API server (used when running standalone) |
 | `NODE_ENV` | `development` | Environment mode (`development` or `production`) |
-| `JWT_SECRET` | Dev placeholder | Secret key for signing authentication tokens (guarded in production) |
-| `CORS_ORIGIN` | `http://localhost:5173` | Allowed CORS origin (set to production client URL in prod) |
-| `DB_DIALECT` | `sqlite` | Database dialect (`sqlite` or `postgres`) |
-| `DATABASE_URL` | None | Connection string for PostgreSQL in production |
+| `JWT_SECRET` | Dev placeholder | Secret key for signing authentication tokens (strictly validated in production) |
+| `DB_DIALECT` | `sqlite` | Database dialect (`sqlite` for local dev or `postgres` for hosted cloud database) |
+| `DATABASE_URL` | `./data/dev.sqlite` | SQLite file path or PostgreSQL connection string (`postgresql://...`) |
+| `DB_SSL` | `true` | Set to `false` only if using non-SSL local PostgreSQL; required/enabled by default for Postgres |
+| `CORS_ORIGIN` | `http://localhost:5173` | Allowed CORS origin (not needed for same-origin serverless on Vercel) |
+| `SMS_PROVIDER` | `console` | SMS provider (`console` for dev/testing, `fast2sms` for production) |
+| `FAST2SMS_API_KEY` | None | API key for Fast2SMS service (when `SMS_PROVIDER=fast2sms`) |
+| `DEMO_PASSWORD` | `Demo@1234` | Password used for seeding demo accounts |
+| `ALLOW_DB_RESET` | `false` | Safety guard: must be explicitly set to `true` to execute destructive `npm run seed -- --reset` on PostgreSQL |
+| `REGISTER_RATE_LIMIT_WINDOW_MINUTES` | `60` | Window size for citizen household registration |
+| `REGISTER_RATE_LIMIT_MAX` | `5` in prod / `100` dev | Max registrations allowed per window |
 | `CITIZEN_STATUS_RATE_LIMIT_WINDOW_MINUTES` | `15` | Window size for citizen status queries |
-| `CITIZEN_STATUS_RATE_LIMIT_MAX` | `30` | Max status queries per window (strict prod default) |
-| `REGISTER_RATE_LIMIT_WINDOW_MINUTES` | `60` | Window size for household registration |
-| `REGISTER_RATE_LIMIT_MAX` | `5` | Max registrations per window (strict prod default) |
+| `CITIZEN_STATUS_RATE_LIMIT_MAX` | `30` in prod / `500` dev | Max status lookups allowed per window |
 
 ### Client (`client/.env`)
 
 | Variable | Default | Description |
 |---|---|---|
-| `VITE_API_BASE_URL` | `/api` | Base path for backend API endpoints |
+| `VITE_API_URL` | `/api` | Base path for backend API endpoints (leave unset or `/api` on Vercel for same-origin routing) |
+
+## Deploying to Vercel
+
+The application is structured to deploy smoothly on Vercel as a single project:
+- **Frontend**: Static React single-page app built with Vite, served directly from Vercel's global CDN (`client/dist`).
+- **Backend API**: Express API running as a serverless function (`api/index.js`), handling all `/api/*` requests.
+- **Database**: Cloud-hosted PostgreSQL (Neon, Supabase, AWS RDS, etc.).
+
+### 1. Database Setup (Cloud PostgreSQL)
+Create a managed PostgreSQL database (e.g. on [Neon](https://neon.tech), Supabase, or AWS RDS). Copy the connection URL (`postgresql://user:password@host/dbname?sslmode=require`).
+
+### 2. Configure Vercel Project Environment Variables
+In your Vercel Project Settings > **Environment Variables**, set:
+- `DB_DIALECT` = `postgres`
+- `DATABASE_URL` = `<your-postgresql-connection-string>`
+- `DB_SSL` = `true`
+- `JWT_SECRET` = `<a-random-64-character-secret>`
+- `NODE_ENV` = `production`
+- `SMS_PROVIDER` = `console` (or `fast2sms`)
+- `FAST2SMS_API_KEY` = `<your-key-if-using-sms>`
+- `VITE_API_URL` = `/api`
+
+### 3. Deploy to Vercel
+Push your repository to GitHub/GitLab and import it into Vercel, or run via the Vercel CLI:
+```bash
+vercel
+```
+Vercel automatically detects `vercel.json`, executes `npm run install:all`, builds the client via `npm --prefix client run build`, and routes `/api/*` to the serverless function.
+
+### 4. Seeding the Cloud Database from Windows Command Prompt
+Because cold starts on serverless must never run destructive schema migrations, seed or reset your cloud database from your administrative machine.
+
+To initialize/reset and seed the demo data on your cloud database from Windows Command Prompt (`cmd.exe`):
+
+```cmd
+cd /d "d:\Smart waste Segregator for ULB\waste-segregation-monitoring"
+set DB_DIALECT=postgres
+set DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+set ALLOW_DB_RESET=true
+npm run demo:reset
+```
+
+> **Note**: `ALLOW_DB_RESET=true` is required whenever resetting a PostgreSQL database. The seed script prints the targeted database host before dropping tables to prevent accidental wiping of production data.
+
+To re-seed without dropping tables:
+```cmd
+set DB_DIALECT=postgres
+set DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+npm --prefix server run seed
+```
 
 ## Seeding & Demo Accounts
 

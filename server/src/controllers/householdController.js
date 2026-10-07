@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Household, PickupLog, Ward } from '../models/index.js';
+import { Household, PickupLog, Ward, sequelize } from '../models/index.js';
 import HttpError from '../utils/HttpError.js';
 import { scopedWardId } from '../utils/access.js';
 import { withHouseholdQrAllocation } from '../services/householdService.js';
@@ -28,8 +28,9 @@ export async function listHouseholds(request, response) {
   if (wardId) where.wardId = wardId;
   if (type) where.type = type;
   if (search) {
+    const likeOp = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
     where[Op.or] = ['ownerName', 'address', 'phone', 'qrCode'].map((field) => ({
-      [field]: { [Op.like]: `%${search}%` },
+      [field]: { [likeOp]: `%${search}%` },
     }));
   }
 

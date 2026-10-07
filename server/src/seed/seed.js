@@ -15,7 +15,31 @@ import { calculatePoints } from '../services/pointsService.js';
 
 const reset = process.argv.includes('--reset');
 const dayInMilliseconds = 24 * 60 * 60 * 1000;
-const demoPassword = 'Demo@1234'; // Demo credentials only; change before any non-demo use.
+const demoPassword = process.env.DEMO_PASSWORD || 'Demo@1234'; // Demo credentials only; change before any non-demo use.
+
+if (reset) {
+  const dialect = sequelize.getDialect();
+  const databaseUrl = process.env.DATABASE_URL || '';
+  const isPostgres = dialect === 'postgres';
+  const isRemote = isPostgres || /^(postgres|postgresql|mysql|mariadb):\/\//i.test(databaseUrl);
+
+  if (isRemote) {
+    if (process.env.ALLOW_DB_RESET !== 'true') {
+      console.error('\n[SAFETY ERROR] Refusing to reset remote/PostgreSQL database without ALLOW_DB_RESET=true.');
+      console.error('To confirm database reset, run with ALLOW_DB_RESET=true in your environment.\n');
+      process.exit(1);
+    }
+
+    let targetHost = 'unknown host';
+    try {
+      const parsedUrl = new URL(databaseUrl);
+      targetHost = `${parsedUrl.hostname}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
+    } catch {
+      targetHost = dialect;
+    }
+    console.log(`\n[SAFETY CHECK] ALLOW_DB_RESET=true confirmed. Wiping and resetting database on: ${targetHost}\n`);
+  }
+}
 
 const wardDefinitions = [
   { name: 'Ward 1 - Central', code: 'W01', zone: 'Central Zone' },

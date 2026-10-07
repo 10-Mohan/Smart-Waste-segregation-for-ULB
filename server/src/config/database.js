@@ -7,6 +7,8 @@ import { Sequelize } from 'sequelize';
 const dialect = process.env.DB_DIALECT || 'sqlite';
 const databaseUrl = process.env.DATABASE_URL;
 const serverDirectory = fileURLToPath(new URL('../../', import.meta.url));
+import pg from 'pg';
+
 let sequelize;
 
 if (dialect === 'sqlite') {
@@ -21,7 +23,24 @@ if (dialect === 'sqlite') {
     throw new Error('DATABASE_URL is required when DB_DIALECT=postgres.');
   }
 
-  sequelize = new Sequelize(databaseUrl, { dialect, logging: false });
+  const useSsl = process.env.DB_SSL !== 'false';
+  sequelize = new Sequelize(databaseUrl, {
+    dialect,
+    dialectModule: pg,
+    logging: false,
+    dialectOptions: useSsl ? {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    } : {},
+    pool: {
+      max: 5,
+      min: 0,
+      idle: 10000,
+      acquire: 20000,
+    },
+  });
 } else {
   throw new Error(`Unsupported DB_DIALECT: ${dialect}`);
 }

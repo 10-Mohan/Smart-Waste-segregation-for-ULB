@@ -291,10 +291,11 @@ async function main() {
     }
   });
 
-  await check('health endpoint remains available', async () => {
+  await check('health endpoint remains available and reports db status', async () => {
     const result = await request('/health');
     expectStatus(result, 200);
     assert.equal(result.data.status, 'ok');
+    assert.equal(result.data.db, 'ok');
   });
 
   // ═══ DASHBOARD ROLE SCOPING ═══════════════════════════════════════════════
