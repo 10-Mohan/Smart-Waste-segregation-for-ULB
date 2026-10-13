@@ -66,7 +66,7 @@ export default function ViolationsLog({ initialData, filters }) {
                     <td>{v.household?.qrCode || `HH-${v.householdId}`}</td>
                     <td>{v.household?.ward?.code}</td>
                     <td>{v.worker?.name}</td>
-                    <td>{v.reason || 'Unspecified'}</td>
+                    <td>{v.reason || 'No reason recorded'}</td>
                   </tr>
                 ))}
               </tbody>

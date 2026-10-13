@@ -96,9 +96,26 @@
 }
 
 .summary-row {
+  display: block;
+}
+
+.dashboard-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1.5rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .dashboard-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-summary {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
 }
 
 .summary-card {
@@ -268,4 +285,11 @@
   font-weight: 600;
   color: var(--text-secondary, #666);
   white-space: nowrap;
+}
+
+.dashboard-table th.col-reason,
+.dashboard-table td.cell-reason {
+  min-width: 180px;
+  white-space: normal;
+  word-break: break-word;
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '../../components/ui/Card.jsx';
 
 function groupIntoWeeks(dailyData) {
@@ -8,9 +8,6 @@ function groupIntoWeeks(dailyData) {
   
   for (const day of dailyData) {
     const d = new Date(day.period);
-    // JS getDay(): 0 is Sunday, 1 is Monday.
-    // Assuming week starts on Monday, or let's just group every 7 items if lazy, but real grouping is better.
-    // Let's use ISO week or just a simple week start.
     const startOfWeek = new Date(d);
     startOfWeek.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); // Monday start
     const weekKey = startOfWeek.toISOString().slice(0, 10);
@@ -33,8 +30,14 @@ function groupIntoWeeks(dailyData) {
   });
 }
 
-export default function TrendChart({ data, loading }) {
-  const [granularity, setGranularity] = useState('day');
+export default function TrendChart({ data, loading, defaultGranularity = 'day' }) {
+  const [granularity, setGranularity] = useState(defaultGranularity);
+
+  useEffect(() => {
+    if (defaultGranularity) {
+      setGranularity(defaultGranularity);
+    }
+  }, [defaultGranularity]);
 
   const chartData = useMemo(() => {
     if (!data?.data) return [];
@@ -46,16 +49,55 @@ export default function TrendChart({ data, loading }) {
   const points = chartData.length;
   const maxCompliance = 100;
 
-  // Simple SVG mapping
   const width = 600;
-  const height = 200;
-  const paddingX = 40;
-  const paddingY = 20;
+  const height = 220;
+  const paddingLeft = 45;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 35;
 
-  const getX = (index) => paddingX + (index * (width - 2 * paddingX) / Math.max(1, points - 1));
-  const getY = (value) => height - paddingY - (value / maxCompliance) * (height - 2 * paddingY);
+  const getX = (index) => paddingLeft + (index * (width - paddingLeft - paddingRight) / Math.max(1, points - 1));
+  const getY = (value) => height - paddingBottom - (value / maxCompliance) * (height - paddingTop - paddingBottom);
 
-  const pathD = chartData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.compliancePercent)}`).join(' ');
+  // Build path with gaps: break line on days with no pickups
+  const pathD = useMemo(() => {
+    let d = '';
+    let inSegment = false;
+    chartData.forEach((item, i) => {
+      if (item.totalPickups > 0) {
+        const x = getX(i);
+        const y = getY(item.compliancePercent);
+        if (!inSegment) {
+          d += `M ${x} ${y} `;
+          inSegment = true;
+        } else {
+          d += `L ${x} ${y} `;
+        }
+      } else {
+        inSegment = false;
+      }
+    });
+    return d.trim();
+  }, [chartData, points]);
+
+  const yTicks = [0, 25, 50, 75, 100];
+
+  const xTicks = useMemo(() => {
+    if (points === 0) return [];
+    if (points <= 6) {
+      return chartData.map((d, i) => ({ index: i, label: d.period }));
+    }
+    const count = 5;
+    const step = (points - 1) / (count - 1);
+    const result = [];
+    for (let k = 0; k < count; k++) {
+      const idx = Math.min(points - 1, Math.round(k * step));
+      if (!result.some(r => r.index === idx)) {
+        result.push({ index: idx, label: chartData[idx].period });
+      }
+    }
+    return result;
+  }, [chartData, points]);
 
   return (
     <Card className="dashboard-widget trend-chart-widget">
@@ -71,39 +113,128 @@ export default function TrendChart({ data, loading }) {
         <p>No data available for this period.</p>
       ) : (
         <>
-          <div className="svg-chart-container" aria-hidden="true">
-            <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" preserveAspectRatio="none">
-              {/* Axes */}
-              <line x1={paddingX} y1={height - paddingY} x2={width - paddingX} y2={height - paddingY} stroke="#ccc" />
-              <line x1={paddingX} y1={paddingY} x2={paddingX} y2={height - paddingY} stroke="#ccc" />
+          <div className="svg-chart-container" style={{ position: 'relative' }}>
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              width="100%"
+              height="100%"
+              style={{ display: 'block', overflow: 'visible' }}
+              role="img"
+              aria-label="Compliance trend chart"
+            >
+              {/* Y-axis gridlines and labels */}
+              {yTicks.map(val => {
+                const y = getY(val);
+                return (
+                  <g key={val}>
+                    <line
+                      x1={paddingLeft}
+                      y1={y}
+                      x2={width - paddingRight}
+                      y2={y}
+                      stroke={val === 0 ? '#bbb' : '#e2e8f0'}
+                      strokeDasharray={val === 0 ? undefined : '3 3'}
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={paddingLeft - 8}
+                      y={y + 3}
+                      textAnchor="end"
+                      fontSize="10"
+                      fill="#666"
+                    >
+                      {val}%
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Y-axis line */}
+              <line
+                x1={paddingLeft}
+                y1={paddingTop}
+                x2={paddingLeft}
+                y2={height - paddingBottom}
+                stroke="#bbb"
+                strokeWidth="1"
+              />
+
+              {/* X-axis tick marks and labels */}
+              {xTicks.map(t => {
+                const x = getX(t.index);
+                let anchor = 'middle';
+                if (t.index === 0) anchor = 'start';
+                else if (t.index === points - 1) anchor = 'end';
+                return (
+                  <g key={t.index}>
+                    <line
+                      x1={x}
+                      y1={height - paddingBottom}
+                      x2={x}
+                      y2={height - paddingBottom + 5}
+                      stroke="#bbb"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={x}
+                      y={height - paddingBottom + 18}
+                      textAnchor={anchor}
+                      fontSize="10"
+                      fill="#666"
+                    >
+                      {t.label}
+                    </text>
+                  </g>
+                );
+              })}
               
-              {/* Path */}
-              {pathD && <path d={pathD} fill="none" stroke="var(--color-primary, #0056b3)" strokeWidth="3" />}
+              {/* Trend Path with gaps */}
+              {pathD && (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="var(--color-primary, #0056b3)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
               
-              {/* Points */}
-              {chartData.map((d, i) => (
-                <circle 
-                  key={d.period} 
-                  cx={getX(i)} 
-                  cy={getY(d.compliancePercent)} 
-                  r="4" 
-                  fill="var(--color-primary, #0056b3)"
-                >
-                  <title>{`${d.period}: ${d.compliancePercent}%`}</title>
-                </circle>
-              ))}
+              {/* Points: only rendered when totalPickups > 0 */}
+              {chartData.map((d, i) => {
+                if (d.totalPickups === 0) return null;
+                const tooltipText = `${d.period}: ${d.compliancePercent}% (${d.segregated}/${d.totalPickups} pickups)`;
+                return (
+                  <circle 
+                    key={d.period} 
+                    cx={getX(i)} 
+                    cy={getY(d.compliancePercent)} 
+                    r="4" 
+                    fill="var(--color-primary, #0056b3)"
+                    tabIndex={0}
+                    role="graphics-symbol"
+                    aria-label={tooltipText}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <title>{tooltipText}</title>
+                  </circle>
+                );
+              })}
             </svg>
-            <div className="chart-labels x-axis">
-              <span>{chartData[0]?.period}</span>
-              <span>{chartData[chartData.length - 1]?.period}</span>
-            </div>
           </div>
           
           <div className="sr-only">
             <table>
               <caption>Compliance Trend Data</caption>
               <thead>
-                <tr><th>Period</th><th>Compliance %</th><th>Pickups</th></tr>
+                <tr>
+                  <th>Period</th>
+                  <th>Compliance %</th>
+                  <th>Total Pickups</th>
+                  <th>Segregated</th>
+                  <th>Mixed</th>
+                  <th>Rejected</th>
+                </tr>
               </thead>
               <tbody>
                 {chartData.map(d => (
@@ -111,6 +242,9 @@ export default function TrendChart({ data, loading }) {
                     <td>{d.period}</td>
                     <td>{d.compliancePercent}%</td>
                     <td>{d.totalPickups}</td>
+                    <td>{d.segregated}</td>
+                    <td>{d.mixed}</td>
+                    <td>{d.rejected}</td>
                   </tr>
                 ))}
               </tbody>

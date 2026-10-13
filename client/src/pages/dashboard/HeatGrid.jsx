@@ -31,20 +31,26 @@ export default function HeatGrid({ data, wards, loading }) {
           </thead>
           <tbody>
             {data.map(wardTrend => {
-              const wardInfo = wards?.find(w => w.wardId === wardTrend.wardId);
-              const name = wardInfo ? wardInfo.wardName : `Ward ${wardTrend.wardId}`;
+              // wardName is baked in by useDashboard; fall back to wards prop then generic label
+              const wardInfo = wards?.find(w => w.wardId === wardTrend.wardId) || (data.length === 1 && wards?.length === 1 ? wards[0] : null);
+              const name = wardTrend.wardName || wardInfo?.wardName || `Ward ${wardTrend.wardId ?? '?'}`;
               
               const periodMap = new Map();
-              wardTrend.data?.forEach(d => periodMap.set(d.period, d.compliancePercent));
+              wardTrend.data?.forEach(d => {
+                if (d.totalPickups > 0) {
+                  periodMap.set(d.period, d.compliancePercent);
+                }
+              });
               
               return (
-                <tr key={wardTrend.wardId}>
+                <tr key={wardTrend.wardId || name}>
                   <td style={{ textAlign: 'left', padding: '0.5rem', fontWeight: 'bold' }}>{name}</td>
                   {weeks.map(w => {
+                    const hasPickups = periodMap.has(w);
                     const val = periodMap.get(w);
-                    let color = '#eee';
+                    let color = 'transparent';
                     let text = '-';
-                    if (val !== undefined) {
+                    if (hasPickups) {
                       text = `${val}%`;
                       if (val >= 70) color = 'var(--color-good, #23623f)';
                       else if (val >= 40) color = 'var(--color-warn, #754900)';
@@ -53,8 +59,8 @@ export default function HeatGrid({ data, wards, loading }) {
                     return (
                       <td key={w} style={{ padding: '0.5rem' }}>
                         <div style={{
-                          backgroundColor: val !== undefined ? color : 'transparent',
-                          color: val !== undefined ? '#fff' : 'inherit',
+                          backgroundColor: color,
+                          color: hasPickups ? '#fff' : 'inherit',
                           padding: '0.25rem',
                           borderRadius: '4px',
                           fontWeight: 'bold',

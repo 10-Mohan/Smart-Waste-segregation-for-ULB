@@ -22,6 +22,10 @@ const AXE_SOURCE = (() => {
 const BASE_URL = process.env.CHECK_URL || 'http://localhost:5000';
 const SERVER_DIR = path.resolve(__dirname, '../../server');
 
+import 'dotenv/config';
+
+const demoPassword = process.env.DEMO_PASSWORD || 'Demo@1234';
+
 async function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 let totalViolations = 0;
@@ -44,8 +48,12 @@ async function runAxe(page, label) {
 }
 
 async function main() {
-  console.log('Resetting DB...');
-  execSync('npm run seed -- --reset', { cwd: SERVER_DIR, stdio: 'ignore' });
+  if (process.env.NO_RESET !== 'true') {
+    console.log('Resetting DB...');
+    execSync('npm run seed -- --reset', { cwd: SERVER_DIR, stdio: 'ignore' });
+  } else {
+    console.log('Skipping DB reset (NO_RESET=true)...');
+  }
 
   const browser = await puppeteer.launch({ executablePath: CHROME_PATH, headless: 'new', args: ['--no-sandbox'] });
   const page = await browser.newPage();
@@ -80,7 +88,7 @@ async function main() {
 
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
   await page.type('#login-email', 'worker@demo.in');
-  await page.type('#login-password', 'Demo@1234');
+  await page.type('#login-password', demoPassword);
   await page.click('button[type="submit"]');
   await page.waitForSelector('.worker-page', { timeout: 8000 });
   await sleep(500);
@@ -101,7 +109,7 @@ async function main() {
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
   await page.waitForSelector('#login-email', { timeout: 5000 });
   await page.type('#login-email', 'admin@demo.in');
-  await page.type('#login-password', 'Demo@1234');
+  await page.type('#login-password', demoPassword);
   await page.click('button[type="submit"]');
   await page.waitForSelector('.dashboard-page', { timeout: 10000 });
   await sleep(1500);
@@ -112,7 +120,7 @@ async function main() {
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle0' });
   await page.waitForSelector('#login-email', { timeout: 5000 });
   await page.type('#login-email', 'supervisor@demo.in');
-  await page.type('#login-password', 'Demo@1234');
+  await page.type('#login-password', demoPassword);
   await page.click('button[type="submit"]');
   await page.waitForSelector('.dashboard-page', { timeout: 10000 });
   await sleep(1500);

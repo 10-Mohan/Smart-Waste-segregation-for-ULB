@@ -147,7 +147,7 @@ export async function getTrends({ from, to, wardId, granularity = 'day' }) {
     const date = new Date(`${dateKeyValue}T00:00:00.000Z`);
     const key = granularity === 'week' ? dayKey(weekStart(date)) : dateKeyValue;
     const counts = countsByPeriod.get(key) || { segregated: 0, mixed: 0, rejected: 0 };
-    counts[row.status] = Number(row.count);
+    counts[row.status] = (counts[row.status] || 0) + Number(row.count);
     countsByPeriod.set(key, counts);
   }
 
@@ -176,7 +176,7 @@ export async function getHotspots({ from, to, wardId }) {
     where: makeLogWhere(period.from, period.to, { status: { [Op.in]: ['mixed', 'rejected'] } }),
     include,
     group: ['PickupLog.householdId'],
-    order: [[literal('violationCount'), 'DESC']],
+    order: [[literal('"violationCount"'), 'DESC']],
     limit: 10,
     raw: true,
   });
@@ -189,17 +189,18 @@ export async function getHotspots({ from, to, wardId }) {
       attributes: ['householdId', 'reason', [fn('COUNT', col('PickupLog.id')), 'reasonCount']],
       where: makeLogWhere(period.from, period.to, {
         householdId: { [Op.in]: ids },
-        status: 'rejected',
+        status: { [Op.in]: ['mixed', 'rejected'] },
+        reason: { [Op.ne]: null },
       }),
       group: ['householdId', 'reason'],
-      order: [[literal('reasonCount'), 'DESC'], ['reason', 'ASC']],
+      order: [[literal('"reasonCount"'), 'DESC'], ['reason', 'ASC']],
       raw: true,
     }),
   ]);
   const householdById = new Map(households.map((household) => [household.id, household]));
   const commonReasonById = new Map();
   for (const row of reasonRows) {
-    if (!commonReasonById.has(Number(row.householdId))) commonReasonById.set(Number(row.householdId), row.reason);
+    if (row.reason && !commonReasonById.has(Number(row.householdId))) commonReasonById.set(Number(row.householdId), row.reason);
   }
 
   return aggregates.map((row) => {
@@ -212,7 +213,7 @@ export async function getHotspots({ from, to, wardId }) {
       wardName: household.ward.name,
       address: household.address,
       count: Number(row.violationCount),
-      mostCommonReason: commonReasonById.get(household.id) || 'Unspecified',
+      mostCommonReason: commonReasonById.get(household.id) || 'No reason recorded',
     };
   });
 }
@@ -249,7 +250,7 @@ export async function getRejectionReasons({ from, to, wardId }) {
     group: ['reason'],
     order: [[literal('count'), 'DESC'], ['reason', 'ASC']],
     raw: true,
-  }).then((rows) => rows.map((row) => ({ reason: row.reason || 'Unspecified', count: Number(row.count) })));
+  }).then((rows) => rows.map((row) => ({ reason: row.reason || 'No reason recorded', count: Number(row.count) })));
 }
 
 export async function getWardExportRows({ from, to, wardId }) {

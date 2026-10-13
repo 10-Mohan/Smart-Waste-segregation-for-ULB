@@ -18,7 +18,7 @@ export default function Hotspots({ data, loading }) {
                 <th>Owner</th>
                 <th>Ward</th>
                 <th>Violations</th>
-                <th>Most Common Reason</th>
+                <th className="col-reason" style={{ minWidth: '180px', whiteSpace: 'normal' }}>Most Common Reason</th>
               </tr>
             </thead>
             <tbody>
@@ -29,7 +29,7 @@ export default function Hotspots({ data, loading }) {
                   <td>{h.ownerName.split(' ')[0]}</td>
                   <td>{h.wardCode}</td>
                   <td style={{ fontWeight: 'bold' }}>{h.count}</td>
-                  <td>{h.mostCommonReason}</td>
+                  <td className="cell-reason" style={{ minWidth: '180px', whiteSpace: 'normal' }}>{h.mostCommonReason || 'No reason recorded'}</td>
                 </tr>
               ))}
             </tbody>

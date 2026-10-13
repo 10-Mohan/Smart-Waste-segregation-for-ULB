@@ -62,6 +62,16 @@ export default function Dashboard() {
     return res;
   }, [period, customFrom, customTo, wardId]);
 
+  const defaultGranularity = useMemo(() => {
+    if (period === '7d') return 'day';
+    if (period === '30d' || period === '90d') return 'week';
+    if (period === 'custom' && customFrom && customTo) {
+      const diffDays = (new Date(customTo) - new Date(customFrom)) / (24 * 60 * 60 * 1000);
+      return diffDays >= 30 ? 'week' : 'day';
+    }
+    return 'week';
+  }, [period, customFrom, customTo]);
+
   const { data, loading, error, refresh, lastRefreshed } = useDashboard(filters, { adminWards: user?.role === 'ulb_admin' ? allWards : [] });
   const [exporting, setExporting] = useState(false);
 
@@ -115,7 +125,7 @@ export default function Dashboard() {
               <label htmlFor="ward-select" className="sr-only">Select Ward</label>
               <select id="ward-select" value={wardId} onChange={e => setWardId(e.target.value)}>
                 <option value="">All Wards</option>
-                {allWards.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {allWards.map(w => <option key={w.wardId || w.id} value={w.wardId || w.id}>{w.wardName || w.name}</option>)}
               </select>
             </div>
           )}
@@ -147,7 +157,7 @@ export default function Dashboard() {
           
           <div className="dashboard-row two-col">
             <WardComparison data={data.wards} loading={loading} />
-            <TrendChart data={data.trends} loading={loading} />
+            <TrendChart data={data.trends} loading={loading} defaultGranularity={defaultGranularity} />
           </div>
           
           <div className="dashboard-row">

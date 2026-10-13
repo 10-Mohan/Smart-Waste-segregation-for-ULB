@@ -75,6 +75,12 @@ const rejectionReasons = [
   'Glass mixed with food waste',
 ];
 
+const mixedReasons = [
+  'Wet and dry waste not separated',
+  'Glass mixed with food waste',
+  'Plastic in wet bin',
+];
+
 function makeClientUuid(sequence) {
   return `00000000-0000-4000-8000-${String(sequence).padStart(12, '0')}`;
 }
@@ -126,7 +132,10 @@ function buildPickupEvents(householdByQrCode) {
       }
       
       if (status === 'rejected') reason = rejectionReasons[sequence % rejectionReasons.length];
-      if (status === 'mixed') note = 'Please separate wet and dry waste for the next collection.';
+      if (status === 'mixed') {
+        reason = mixedReasons[sequence % mixedReasons.length];
+        note = 'Please separate wet and dry waste for the next collection.';
+      }
       
       events.push({
         clientUuid: makeClientUuid(sequence),
@@ -147,11 +156,17 @@ function buildPickupEvents(householdByQrCode) {
     plan.statuses.forEach((status, dayIndex) => {
       sequence += 1;
       const loggedAt = new Date(Date.now() - (13 - dayIndex) * dayInMilliseconds - 15 * 60 * 1000);
+      let reason = null;
+      if (status === 'rejected') {
+        reason = rejectionReasons[(sequence - 1) % rejectionReasons.length];
+      } else if (status === 'mixed' && withHistory) {
+        reason = mixedReasons[(sequence - 1) % mixedReasons.length];
+      }
       events.push({
         clientUuid: makeClientUuid(sequence),
         household: wardHouseholds[dayIndex % wardHouseholds.length],
         status,
-        reason: status === 'rejected' ? rejectionReasons[(sequence - 1) % rejectionReasons.length] : null,
+        reason,
         note: status === 'mixed' ? 'Please separate wet and dry waste for the next collection.' : null,
         loggedAt,
       });

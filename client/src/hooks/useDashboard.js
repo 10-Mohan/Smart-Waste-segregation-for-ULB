@@ -40,7 +40,7 @@ export default function useDashboard(filters, options = {}) {
     try {
       const opts = { signal: controller.signal };
       const heatGridPromises = adminWards.length > 0 
-        ? adminWards.map(w => fetchDashboardTrends({ ...filters, wardId: w.id, granularity: 'week' }, opts).then(res => ({ wardId: w.id, ...res })))
+        ? adminWards.map(w => fetchDashboardTrends({ ...filters, wardId: w.wardId, granularity: 'week' }, opts).then(res => ({ wardId: w.wardId, wardName: w.wardName, ...res })))
         : [fetchDashboardTrends({ ...filters, granularity: 'week' }, opts)];
 
       const [

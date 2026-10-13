@@ -3,10 +3,12 @@ import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import 'dotenv/config';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const serverDirectory = resolve(scriptDirectory, '..');
 const baseUrl = (process.env.API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+const demoPassword = process.env.DEMO_PASSWORD || 'Demo@1234';
 let failures = 0;
 
 function check(name, callback) {
@@ -53,7 +55,7 @@ async function main() {
   };
   for (const [role, email] of Object.entries(credentials)) {
     await check(`login ${role}`, async () => {
-      const result = await request('/auth/login', { method: 'POST', body: { email, password: 'Demo@1234' } });
+      const result = await request('/auth/login', { method: 'POST', body: { email, password: demoPassword } });
       expectStatus(result, 200);
       assert.ok(result.data.token);
       assert.equal(result.data.user.role, role);
