@@ -67,8 +67,10 @@ function Navigation() {
           {(user?.role === 'supervisor' || user?.role === 'ulb_admin') && (
             <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'is-active' : ''}>Dashboard</NavLink>
           )}
+          {user?.role === 'worker' && (
+            <NavLink to="/worker" className={({ isActive }) => isActive ? 'is-active' : ''}>Worker</NavLink>
+          )}
           <NavLink to="/citizen" className={({ isActive }) => isActive ? 'is-active' : ''}>Citizen</NavLink>
-          <NavLink to="/worker" className={({ isActive }) => isActive ? 'is-active' : ''}>Worker</NavLink>
           {user
             ? <Button type="button" size="sm" variant="secondary" onClick={signOut}>Logout</Button>
             : <Button to="/login" size="sm">Login</Button>}
@@ -80,8 +82,10 @@ function Navigation() {
             {(user?.role === 'supervisor' || user?.role === 'ulb_admin') && (
               <NavLink to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>
             )}
+            {user?.role === 'worker' && (
+              <NavLink to="/worker" onClick={closeMenu}>Worker</NavLink>
+            )}
             <NavLink to="/citizen" onClick={closeMenu}>Citizen</NavLink>
-            <NavLink to="/worker" onClick={closeMenu}>Worker</NavLink>
             {user
               ? <Button type="button" variant="secondary" onClick={signOut}>Logout</Button>
               : <Button to="/login" onClick={closeMenu}>Login</Button>}

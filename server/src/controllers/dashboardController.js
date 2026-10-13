@@ -6,6 +6,7 @@ import {
   getViolations,
   getWardExportRows,
   getWardSummaries,
+  getHeatGrid,
 } from '../services/dashboardService.js';
 import { scopedWardId } from '../utils/access.js';
 
@@ -48,6 +49,19 @@ export async function violations(request, response) {
 export async function reasons(request, response) {
   response.json({ reasons: await getRejectionReasons(dashboardFilters(request)) });
 }
+
+export async function heatGrid(request, response) {
+  const { from, to } = request.query;
+  const filters = { from, to };
+  if (request.user.role !== 'ulb_admin') {
+    // Supervisors should only see their own ward regardless of query param
+    filters.wardId = request.user.wardId;
+  } else if (request.query.wardId) {
+    filters.wardId = request.query.wardId;
+  }
+  response.json(await getHeatGrid(filters));
+}
+
 
 function csvCell(value) {
   const text = String(value ?? '');

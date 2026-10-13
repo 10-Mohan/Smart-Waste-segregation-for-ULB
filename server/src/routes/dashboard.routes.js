@@ -6,6 +6,7 @@ import {
   reasons,
   summary,
   trends,
+  heatGrid,
   violations,
   wards,
 } from '../controllers/dashboardController.js';
@@ -41,4 +42,5 @@ router.get(
 );
 router.get('/reasons', ...dashboardAccess, validate(...periodValidation), asyncHandler(reasons));
 
+router.get('/heatgrid', ...dashboardAccess, validate(...periodValidation), asyncHandler(heatGrid));
 export default router;
