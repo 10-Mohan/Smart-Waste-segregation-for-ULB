@@ -30,11 +30,6 @@ export async function fetchDashboardReasons(filters, options) {
   return data.reasons;
 }
 
-export async function fetchDashboardHeatGrid(filters, options) {
-  const { data } = await api.get('/dashboard/heatgrid', { params: filters, ...options });
-  return data;
-}
-
 export async function exportDashboardCsv(filters, token) {
   const searchParams = new URLSearchParams();
   if (filters.from) searchParams.set('from', filters.from);

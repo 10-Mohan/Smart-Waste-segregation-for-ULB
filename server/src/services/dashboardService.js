@@ -275,23 +275,3 @@ export async function getWardExportRows({ from, to, wardId }) {
     };
   }));
 }
-
-/** New heat‑grid service */
-export async function getHeatGrid({ from, to, wardId }) {
-  // Retrieve all wards for the period
-  const wards = await getWardSummaries({ from, to, wardId });
-  // For each ward fetch weekly trend data
-  const results = await Promise.all(
-    wards.map(async (ward) => {
-      const trends = await getTrends({ from, to, wardId: ward.wardId, granularity: 'week' });
-      return {
-        wardId: ward.wardId,
-        wardName: ward.wardName,
-        data: trends.data,
-      };
-    })
-  );
-  return results;
-}
-
-export * from './dashboardService.js';

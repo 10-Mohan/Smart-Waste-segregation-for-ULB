@@ -377,39 +377,6 @@ async function main() {
     expectStatus(result, 200);
     assert.ok(result.text.includes('W01'), 'Admin CSV must include W01');
     assert.ok(result.text.includes('W02'), 'Admin CSV must include W02');
-
-    // ═══ HEATGRID ENDPOINT CHECKS ═══════════════════════════════════════════════
-    await check('admin heatgrid returns both wards with correct names and different values', async () => {
-      const result = await request('/dashboard/heatgrid', { token: tokens.ulb_admin });
-      expectStatus(result, 200);
-      assert.ok(Array.isArray(result.data), 'Heatgrid should return an array');
-      const wardNames = result.data.map((w) => w.wardName || w.name);
-      assert.ok(wardNames.includes('Ward 1 - Central'), 'Admin must see Ward 1');
-      assert.ok(wardNames.includes('Ward 2 - North'), 'Admin must see Ward 2');
-      const first = JSON.stringify(result.data[0].data);
-      const second = JSON.stringify(result.data[1].data);
-      assert.notEqual(first, second, 'Weekly data should differ between wards');
-    });
-
-    await check('supervisor heatgrid returns only Ward 1 even with wardId param', async () => {
-      const result = await request(`/dashboard/heatgrid?wardId=${wardIds.W02}`, { token: tokens.supervisor });
-      expectStatus(result, 200);
-      assert.ok(Array.isArray(result.data), 'Heatgrid should return an array');
-      assert.equal(result.data.length, 1, 'Supervisor should receive exactly one ward');
-      const ward = result.data[0];
-      const name = ward.wardName || ward.name;
-      assert.ok(name.includes('Ward 1'), 'Supervisor must only see Ward 1');
-    });
-
-    await check('worker heatgrid returns 403', async () => {
-      const result = await request('/dashboard/heatgrid', { token: tokens.worker });
-      expectStatus(result, 403);
-    });
-
-    await check('unauthenticated heatgrid returns 401', async () => {
-      const result = await request('/dashboard/heatgrid');
-      expectStatus(result, 401);
-    });
   });
 
 

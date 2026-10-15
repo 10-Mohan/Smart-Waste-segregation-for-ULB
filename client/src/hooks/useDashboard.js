@@ -5,8 +5,7 @@ import {
   fetchDashboardTrends,
   fetchDashboardHotspots,
   fetchDashboardViolations,
-  fetchDashboardHeatGrid,
-
+  fetchDashboardReasons
 } from '../services/dashboard.js';
 
 export default function useDashboard(filters, options = {}) {
@@ -40,7 +39,9 @@ export default function useDashboard(filters, options = {}) {
 
     try {
       const opts = { signal: controller.signal };
-      const heatGridRes = await fetchDashboardHeatGrid(filters, opts);
+      const heatGridPromises = adminWards.length > 0 
+        ? adminWards.map(w => fetchDashboardTrends({ ...filters, wardId: w.wardId, granularity: 'week' }, opts).then(res => ({ wardId: w.wardId, wardName: w.wardName, ...res })))
+        : [fetchDashboardTrends({ ...filters, granularity: 'week' }, opts)];
 
       const [
         summaryRes,
@@ -48,14 +49,16 @@ export default function useDashboard(filters, options = {}) {
         trendsRes,
         hotspotsRes,
         violationsRes,
-        reasonsRes
+        reasonsRes,
+        ...heatGridRes
       ] = await Promise.all([
         fetchDashboardSummary(filters, opts),
         fetchDashboardWards(filters, opts),
         fetchDashboardTrends({ ...filters, granularity: 'day' }, opts), // Trend line always day
         fetchDashboardHotspots(filters, opts),
         fetchDashboardViolations(filters, opts),
-        fetchDashboardReasons(filters, opts)
+        fetchDashboardReasons(filters, opts),
+        ...heatGridPromises
       ]);
 
       setData({

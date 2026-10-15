@@ -8,7 +8,6 @@ import Card from '../components/ui/Card.jsx';
 import Container from '../components/ui/Container.jsx';
 import SectionHeader from '../components/ui/SectionHeader.jsx';
 import Spinner from '../components/ui/Spinner.jsx';
-import { getRoleHome, getPostLoginRedirect } from '../utils/navigation.js';
 import './Login.css';
 
 const demos = [
@@ -16,6 +15,12 @@ const demos = [
   { role: 'Supervisor', email: 'supervisor@demo.in' },
   { role: 'Admin', email: 'admin@demo.in' }
 ];
+
+function routeForRole(role) {
+  if (role === 'worker') return '/worker';
+  if (role === 'supervisor' || role === 'ulb_admin') return '/dashboard';
+  return '/';
+}
 
 export default function Login() {
   const { login, user, loading: authLoading } = useAuth();
@@ -29,9 +34,9 @@ export default function Login() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate(getRoleHome(user.role), { replace: true });
+      navigate(location.state?.from?.pathname || routeForRole(user.role), { replace: true });
     }
-  }, [authLoading, navigate, user]);
+  }, [authLoading, location.state, navigate, user]);
 
   function fillDemo(account) {
     setEmail(account.email);
@@ -45,7 +50,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       const signedInUser = await login(email.trim(), password);
-      const destination = getPostLoginRedirect(location.state?.from?.pathname, signedInUser.role);
+      const destination = location.state?.from?.pathname || routeForRole(signedInUser.role);
       navigate(destination, { replace: true });
     } catch (requestError) {
       setError(requestError.response?.data?.error?.message || 'Unable to sign in. Check your connection and try again.');
