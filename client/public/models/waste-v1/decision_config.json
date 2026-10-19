@@ -1,0 +1,17 @@
+{
+  "acceptedStreamsByBin": {
+    "wet": [
+      "wet"
+    ],
+    "dry": [
+      "dry"
+    ],
+    "hazardous": [
+      "hazardous"
+    ]
+  },
+  "uncertainThreshold": 0.6,
+  "version": "waste-v1",
+  "inputSize": 224,
+  "inputRange": "0-255"
+}

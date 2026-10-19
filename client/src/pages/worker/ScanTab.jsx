@@ -10,6 +10,7 @@ import QrCameraScanner from '../../components/QrCameraScanner.jsx';
 import { submitLog, friendlyLogError } from '../../services/logService.js';
 import BottomSheet from './BottomSheet.jsx';
 import StatusBadge, { statusLabel } from './StatusBadge.jsx';
+import AISheet from '../../ai/AISheet.jsx';
 
 const rejectionReasons = [
   'Hazardous items in dry bin',
@@ -48,12 +49,17 @@ export default function ScanTab({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
   const savingRef = useRef(false);
   const lastSavedRef = useRef(new Map());
   const successTimer = useRef(null);
   const { notify } = useToast();
 
   useEffect(() => () => window.clearTimeout(successTimer.current), []);
+
+  // A new household means any earlier AI suggestion no longer applies.
+  useEffect(() => { setAiSuggestion(null); setAiOpen(false); }, [household?.qrCode]);
 
   function openSuccess(result, status) {
     const saved = {
@@ -100,6 +106,7 @@ export default function ScanTab({
       setReason('');
       setOtherReason('');
       setNote('');
+      setAiSuggestion(null);
       openSuccess(result, status);
     } catch (error) {
       lastSavedRef.current.delete(household.qrCode);
@@ -134,9 +141,26 @@ export default function ScanTab({
     await saveStatus('rejected', selectedReason, note);
   }
 
+  function handleAiApply(suggestion) {
+    setAiSuggestion(suggestion);
+    setAiOpen(false);
+    setSaveError('');
+    if (suggestion.status === 'rejected') {
+      const known = rejectionReasons.includes(suggestion.reason) && suggestion.reason !== 'Other';
+      setReason(known ? suggestion.reason : 'Other');
+      setOtherReason(known ? '' : (suggestion.reasonText || 'See AI note').slice(0, 255));
+      setNote(suggestion.note);
+    } else {
+      setReason('');
+      setOtherReason('');
+      setNote('');
+    }
+  }
+
   function scanNext() {
     window.clearTimeout(successTimer.current);
     setSuccess(null);
+    setAiSuggestion(null);
     onClearHousehold();
     setCode('');
   }
@@ -219,11 +243,20 @@ export default function ScanTab({
               {!isOnline && <Callout variant="note">This household was loaded from the saved ward list.</Callout>}
             </Card>
 
+            <Button className="worker-touch-button" variant="secondary" disabled={saving} onClick={() => setAiOpen(true)}>
+              Check with AI
+            </Button>
+            {aiSuggestion && (
+              <Callout variant="note">
+                AI suggests <strong>{aiSuggestion.status}</strong> ({aiSuggestion.confidence}% confident). Tap the matching button below to confirm, or choose a different one.
+              </Callout>
+            )}
+
             <div className="worker-status-buttons" aria-label="Log pickup status">
-              <button className="worker-status-button worker-status-button--segregated" type="button" disabled={saving} onClick={() => saveStatus('segregated')}>
+              <button className="worker-status-button worker-status-button--segregated" type="button" disabled={saving} onClick={() => saveStatus('segregated', '', aiSuggestion?.note || '')}>
                 <span aria-hidden="true">✓</span> Segregated
               </button>
-              <button className="worker-status-button worker-status-button--mixed" type="button" disabled={saving} onClick={() => saveStatus('mixed')}>
+              <button className="worker-status-button worker-status-button--mixed" type="button" disabled={saving} onClick={() => saveStatus('mixed', '', aiSuggestion?.note || '')}>
                 <span aria-hidden="true">!</span> Mixed
               </button>
               <button className="worker-status-button worker-status-button--rejected" type="button" disabled={saving} onClick={() => { setSaveError(''); setRejectOpen(true); }}>
@@ -235,6 +268,8 @@ export default function ScanTab({
           </div>
         )}
       </div>
+
+      {aiOpen && <AISheet onClose={() => setAiOpen(false)} onApply={handleAiApply} />}
 
       {pickerOpen && (
         <BottomSheet title="Pick a household" onClose={() => setPickerOpen(false)}>

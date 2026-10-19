@@ -1,0 +1,14 @@
+{
+  "battery": "hazardous",
+  "biological": "wet",
+  "cardboard": "dry",
+  "clothes": "dry",
+  "glass": "dry",
+  "metal": "dry",
+  "paper": "dry",
+  "plastic": "dry",
+  "shoes": "dry",
+  "trash": "mixed",
+  "O": "wet",
+  "R": "dry"
+}

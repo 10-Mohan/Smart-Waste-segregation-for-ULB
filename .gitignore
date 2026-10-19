@@ -11,4 +11,5 @@ dist/
 **/dist/
 coverage/
 .DS_Store
-Thumbs.db
+Thumbs.dbml/data/
+ml/data/
