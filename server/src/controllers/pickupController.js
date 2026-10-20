@@ -5,11 +5,12 @@ import { collectValidationErrors } from '../middleware/validate.js';
 import { scopedWardId } from '../utils/access.js';
 import HttpError from '../utils/HttpError.js';
 import { createPickup } from '../services/pickupService.js';
+import { getRetryList } from '../services/retryService.js';
 
 export const pickupFields = [
   body('clientUuid').isUUID().withMessage('clientUuid must be a UUID.'),
   body('qrCode').isString().trim().notEmpty().withMessage('qrCode is required.'),
-  body('status').isIn(['segregated', 'mixed', 'rejected']).withMessage('Invalid pickup status.'),
+  body('status').isIn(['segregated', 'mixed', 'rejected', 'not_available']).withMessage('Invalid pickup status.'),
   body('reason').optional().isString().trim().isLength({ max: 255 }).withMessage('Reason must be at most 255 characters.'),
   body('reason').custom((reason, { req }) => req.body.status !== 'rejected' || (typeof reason === 'string' && reason.trim().length > 0))
     .withMessage('A reason is required when status is rejected.'),
@@ -111,4 +112,10 @@ export async function listPickupLogs(request, response) {
     distinct: true,
   });
   response.json({ logs: rows, pagination: { page: Number(page), limit: Number(limit), total: count } });
+}
+
+export async function listRetries(request, response) {
+  const wardId = scopedWardId(request.user, request.query.wardId);
+  if (!wardId) throw new HttpError(400, 'A ward is required to list retries.');
+  response.json(await getRetryList({ wardId }));
 }

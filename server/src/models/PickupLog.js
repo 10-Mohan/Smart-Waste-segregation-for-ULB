@@ -10,7 +10,7 @@ const PickupLog = sequelize.define('PickupLog', {
   clientUuid: { type: DataTypes.UUID, allowNull: false, unique: true, defaultValue: DataTypes.UUIDV4 },
   householdId: { type: DataTypes.INTEGER, allowNull: false },
   workerId: { type: DataTypes.INTEGER, allowNull: false },
-  status: { type: DataTypes.ENUM('segregated', 'mixed', 'rejected'), allowNull: false },
+  status: { type: DataTypes.ENUM('segregated', 'mixed', 'rejected', 'not_available'), allowNull: false },
   reason: { type: DataTypes.STRING, allowNull: true },
   note: { type: DataTypes.TEXT, allowNull: true },
   loggedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },

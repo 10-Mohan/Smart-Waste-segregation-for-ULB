@@ -2,7 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { body, query } from 'express-validator';
 import { Household, Ward } from '../models/index.js';
-import { citizenStatus, citizenWards, registerCitizenHousehold } from '../controllers/citizenController.js';
+import { citizenStatus, citizenWards, registerCitizenHousehold, updateAvailability } from '../controllers/citizenController.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { validate } from '../middleware/validate.js';
 
@@ -50,6 +50,33 @@ router.get(
     query('phoneLast4').matches(/^\d{4}$/).withMessage('phoneLast4 must contain four digits.'),
   ),
   asyncHandler(citizenStatus),
+);
+router.post(
+  '/availability',
+  citizenLimiter,
+  validate(
+    body('qrCode').isString().trim().notEmpty().withMessage('qrCode required.'),
+    body('phoneLast4')
+      .matches(/^\d{4}$/)
+      .withMessage('phoneLast4 must be four digits.'),
+    body('awayUntil')
+      .optional({ nullable: true })
+      .isISO8601()
+      .custom((value) => {
+        const now = new Date();
+        const date = new Date(value);
+        if (date < now) throw new Error('awayUntil cannot be in the past');
+        if (date > new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000))
+          throw new Error('awayUntil cannot be more than 60 days ahead');
+        return true;
+      })
+      .withMessage('Invalid awayUntil date.'),
+    body('preferredWindow')
+      .optional({ nullable: true })
+      .isIn(['morning', 'afternoon', 'evening'])
+      .withMessage('preferredWindow must be morning, afternoon, or evening.'),
+  ),
+  asyncHandler(updateAvailability),
 );
 
 export default router;

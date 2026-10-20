@@ -13,6 +13,9 @@ import { sendPickupSms } from './notificationService.js';
 import HttpError from '../utils/HttpError.js';
 
 function messageForPickup(status, reason, points) {
+  if (status === 'not_available') {
+    return 'We came for your waste pickup but nobody was home. Please keep your waste ready - we will retry soon. Wet waste should not be kept for many days.';
+  }
   if (status === 'segregated') {
     return `Thank you for segregating your waste. You earned ${points} eco-points.`;
   }

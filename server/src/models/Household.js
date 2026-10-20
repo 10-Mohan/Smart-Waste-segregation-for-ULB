@@ -11,6 +11,8 @@ const Household = sequelize.define('Household', {
   wardId: { type: DataTypes.INTEGER, allowNull: false },
   ecoPoints: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
   active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+  awayUntil: { type: DataTypes.DATEONLY, allowNull: true },
+  preferredWindow: { type: DataTypes.STRING, allowNull: true },
 });
 
 export default Household;

@@ -29,6 +29,10 @@ export function calculatePoints(previousLogsForHousehold, newStatus) {
     return { points: REJECTED_POINTS, reason: 'Rejected pickup: no points awarded.' };
   }
 
+    if (newStatus === 'not_available') {
+    return { points: 0, reason: 'Nobody home: no points change.' };
+  }
+
   if (newStatus !== 'segregated') {
     throw new Error(`Unsupported pickup status: ${newStatus}`);
   }
@@ -37,6 +41,7 @@ export function calculatePoints(previousLogsForHousehold, newStatus) {
   let consecutiveCount = 1;
 
   for (let index = chronologicalLogs.length - 1; index >= 0; index -= 1) {
+    if (chronologicalLogs[index].status === 'not_available') continue;
     if (chronologicalLogs[index].status !== 'segregated') break;
     consecutiveCount += 1;
   }

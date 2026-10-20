@@ -78,9 +78,11 @@ export async function citizenStatus(request, response) {
     raw: true,
   });
   const weeklyCounts = { segregated: 0, mixed: 0, rejected: 0 };
-  for (const { status, count } of weeklyGroups) weeklyCounts[status] = Number(count);
+  for (const { status, count } of weeklyGroups) {
+    if (status in weeklyCounts) weeklyCounts[status] = Number(count);
+  }
   const weeklyCompliance = calculateComplianceFromCounts(weeklyCounts);
-  const lastThree = household.pickupLogs.slice(0, 3);
+  const lastThree = household.pickupLogs.filter((log) => log.status !== 'not_available').slice(0, 3);
   const allLastThreeSegregated = lastThree.length === 3 && lastThree.every((log) => log.status === 'segregated');
   const currentStatus = allLastThreeSegregated || recentRejections === 0 ? 'green' : 'red';
   const latestNonCompliant = household.pickupLogs.find((log) => log.status === 'mixed' || log.status === 'rejected');
@@ -113,5 +115,20 @@ export async function citizenStatus(request, response) {
       pickup: { id: entry.pickupLog?.id || entry.pickupLogId, status: entry.pickupLog?.status || null },
     })),
     pointsRules: { consecutiveSegregatedBonusInterval: CONSECUTIVE_SEGREGATED_BONUS_INTERVAL },
+    awayUntil: household.awayUntil,
+    preferredWindow: household.preferredWindow,
   });
+}
+
+export async function updateAvailability(request, response) {
+  const { qrCode, phoneLast4, awayUntil, preferredWindow } = request.body;
+  const household = await Household.findOne({ where: { qrCode } });
+  if (!household || household.phone.slice(-4) !== phoneLast4) {
+    throw new HttpError(404, 'Household was not found for the supplied details.');
+  }
+  await household.update({
+    awayUntil: awayUntil || null,
+    preferredWindow: preferredWindow || null,
+  });
+  response.json({ awayUntil: household.awayUntil, preferredWindow: household.preferredWindow });
 }
