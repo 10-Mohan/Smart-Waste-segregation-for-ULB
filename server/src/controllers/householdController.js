@@ -85,8 +85,6 @@ export async function getHouseholdQr(request, response) {
       ownerName: household.ownerName,
       address: household.address,
       wardName: household.ward.name,
-      awayUntil: household.awayUntil,
-      preferredWindow: household.preferredWindow,
     },
   });
 }

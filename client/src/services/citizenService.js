@@ -18,6 +18,16 @@ export async function getCitizenStatus(qrCode, phoneLast4) {
   return data;
 }
 
+export async function updateCitizenAvailability(qrCode, phoneLast4, { awayUntil, preferredWindow }) {
+  const { data } = await api.post('/citizen/availability', {
+    qrCode,
+    phoneLast4,
+    awayUntil: awayUntil || null,
+    preferredWindow: preferredWindow || null,
+  });
+  return data;
+}
+
 export function saveCitizenSession(qrCode, phoneLast4) {
   sessionStorage.setItem(CITIZEN_CODE_KEY, qrCode);
   sessionStorage.setItem(CITIZEN_PHONE_LAST4_KEY, phoneLast4);

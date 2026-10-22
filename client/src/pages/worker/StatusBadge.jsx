@@ -1,6 +1,7 @@
 import Badge from '../../components/ui/Badge.jsx';
 
 const statusMeta = {
+  not_available: { label: 'No one home', variant: 'neutral', icon: '-' },
   segregated: { label: 'Segregated', variant: 'good', icon: '✓' },
   mixed: { label: 'Mixed', variant: 'warn', icon: '!' },
   rejected: { label: 'Rejected', variant: 'bad', icon: '×' },

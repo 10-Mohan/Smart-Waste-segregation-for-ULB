@@ -9,7 +9,7 @@ import Spinner from '../../components/ui/Spinner.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
 import Tabs from '../../components/ui/Tabs.jsx';
 import useDocumentTitle from '../../hooks/useDocumentTitle.js';
-import { getCitizenStatus } from '../../services/citizenService.js';
+import { getCitizenStatus, updateCitizenAvailability } from '../../services/citizenService.js';
 import StatusBadge, { statusLabel } from '../worker/StatusBadge.jsx';
 import CitizenQrSheet from './CitizenQrSheet.jsx';
 import './citizen.css';
@@ -78,7 +78,95 @@ function BalanceChart({ entries }) {
   );
 }
 
+const TIME_WINDOWS = [
+  { value: '', label: 'No preference' },
+  { value: 'morning', label: 'Morning' },
+  { value: 'afternoon', label: 'Afternoon' },
+  { value: 'evening', label: 'Evening' },
+];
+
+function toDateInput(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function AvailabilityCard({ code, phoneLast4, awayUntil, preferredWindow, onSaved }) {
+  const todayText = toDateInput(new Date());
+  const latest = new Date();
+  latest.setDate(latest.getDate() + 60);
+  const [away, setAway] = useState(awayUntil && awayUntil >= todayText ? awayUntil : '');
+  const [windowPref, setWindowPref] = useState(preferredWindow || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const { notify } = useToast();
+
+  async function save(nextAway, nextWindow, message) {
+    setSaving(true);
+    setError('');
+    try {
+      await updateCitizenAvailability(code, phoneLast4, { awayUntil: nextAway, preferredWindow: nextWindow });
+      notify(message, 'good');
+      onSaved();
+    } catch (err) {
+      setError(err.response?.status === 422
+        ? 'Pick a date between today and 60 days from now.'
+        : "Couldn't save right now. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <h2 className="citizen-card-title">Your availability</h2>
+      <p className="citizen-muted">
+        Going away, or usually out at a certain time? Tell your collection worker so they can plan visits.
+        Wet waste smells if kept for many days, so please keep it ready when you are home.
+      </p>
+      <div style={{ display: 'grid', gap: '12px', marginTop: '12px' }}>
+        <label htmlFor="citizen-away-until">
+          I am away until
+          <input
+            id="citizen-away-until"
+            type="date"
+            min={todayText}
+            max={toDateInput(latest)}
+            value={away}
+            onChange={(event) => setAway(event.target.value)}
+            style={{ display: 'block', width: '100%', marginTop: '4px' }}
+          />
+        </label>
+        <label htmlFor="citizen-time-window">
+          Best time for pickup
+          <select
+            id="citizen-time-window"
+            value={windowPref}
+            onChange={(event) => setWindowPref(event.target.value)}
+            style={{ display: 'block', width: '100%', marginTop: '4px' }}
+          >
+            {TIME_WINDOWS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </select>
+        </label>
+        {error && <p role="alert">{error}</p>}
+        <Button className="citizen-touch-button" disabled={saving} onClick={() => save(away, windowPref, 'Availability saved')}>
+          {saving ? 'Saving...' : 'Save availability'}
+        </Button>
+        {away && (
+          <button
+            className="citizen-link-button"
+            type="button"
+            disabled={saving}
+            onClick={() => { setAway(''); save('', windowPref, 'Welcome back! Away dates cleared'); }}
+          >
+            I am back - clear away dates
+          </button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 const CitizenDashboard = forwardRef(function CitizenDashboard({ code, phoneLast4, initialStatus, onSwitchHousehold, onSessionStale, onStatusUpdate }, headingRef) {
+  
   const [status, setStatus] = useState(initialStatus);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedText, setUpdatedText] = useState('');
@@ -142,10 +230,14 @@ const CitizenDashboard = forwardRef(function CitizenDashboard({ code, phoneLast4
     if (pickupId) pointsByPickup.set(pickupId, (pointsByPickup.get(pickupId) || 0) + Number(item.points || 0));
   }
 
-  const streak = logs.reduce((count, log) => {
-    if (count === null || log.status !== 'segregated') return null;
-    return count + 1;
-  }, 0) ?? 0;
+    // "No one home" visits are ignored: they neither add to nor break a streak.
+  const countedLogs = logs.filter((log) => log.status !== 'not_available');
+  let streak = 0;
+  for (const log of countedLogs) {
+    if (log.status !== 'segregated') break;
+    streak += 1;
+  }
+  const missedLast = logs[0]?.status === 'not_available';
   const streakInterval = Number(status.pointsRules?.consecutiveSegregatedBonusInterval);
   const untilBonus = streakInterval > 0 ? streakInterval - (streak % streakInterval || 0) : null;
   const latestProblem = logs.find((log) => log.status === 'mixed' || log.status === 'rejected');
@@ -155,7 +247,7 @@ const CitizenDashboard = forwardRef(function CitizenDashboard({ code, phoneLast4
   const pickupsContent = (
     <div className="citizen-tab-content">
       <div className="citizen-filter-chips" role="group" aria-label="Filter pickups">
-        {['all', 'segregated', 'mixed', 'rejected'].map((filter) => (
+        {['all', 'segregated', 'mixed', 'rejected', 'not_available'].map((filter) => (
           <button key={filter} type="button" className="citizen-filter-chip" aria-pressed={pickupFilter === filter} onClick={() => setPickupFilter(filter)}>
             {filter === 'all' ? 'All' : statusLabel(filter)}
           </button>
@@ -252,6 +344,13 @@ const CitizenDashboard = forwardRef(function CitizenDashboard({ code, phoneLast4
         <Callout className="citizen-tips" variant="note" title="Tips for you">
           {status.tips || 'Thanks for taking care to sort your household waste.'}
         </Callout>
+        <AvailabilityCard
+          code={code}
+          phoneLast4={phoneLast4}
+          awayUntil={status.awayUntil}
+          preferredWindow={status.preferredWindow}
+          onSaved={() => refresh(true)}
+        />
       </div>
     ) },
     { id: 'pickups', label: 'Pickups', content: pickupsContent },
@@ -277,13 +376,17 @@ const CitizenDashboard = forwardRef(function CitizenDashboard({ code, phoneLast4
       <div className="citizen-updated" aria-live="polite">{updatedText}</div>
       {refreshError && <Callout variant="warning">{refreshError}</Callout>}
 
-      {logs.length === 0
-        ? <Callout className="citizen-status-banner citizen-status-banner--neutral" variant="note" title="Welcome!">Your first pickup will show up here.</Callout>
-        : status.currentStatus === 'green'
-          ? <Callout className="citizen-status-banner citizen-status-banner--good" variant="info" title="✓ You're on track - nice work segregating!" />
-          : <Callout className="citizen-status-banner citizen-status-banner--bad" variant="warning" title="! Your last pickup needs attention">
-            {latestProblem?.reason || status.tips || 'Please check your last pickup details.'}
-          </Callout>}
+            {missedLast
+        ? <Callout className="citizen-status-banner citizen-status-banner--neutral" variant="warning" title="We came by but nobody was home">
+          Please keep your waste ready for the next visit. If you will be away, set it under Your availability on the Overview tab.
+        </Callout>
+        : logs.length === 0
+          ? <Callout className="citizen-status-banner citizen-status-banner--neutral" variant="note" title="Welcome!">Your first pickup will show up here.</Callout>
+          : status.currentStatus === 'green'
+            ? <Callout className="citizen-status-banner citizen-status-banner--good" variant="info" title="You're on track - nice work segregating!" />
+            : <Callout className="citizen-status-banner citizen-status-banner--bad" variant="warning" title="! Your last pickup needs attention">
+              {latestProblem?.reason || status.tips || 'Please check your last pickup details.'}
+            </Callout>}
 
       <Tabs label="Household dashboard sections" items={tabItems} defaultTab="overview" onChange={setActiveTab} />
 

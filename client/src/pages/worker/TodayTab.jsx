@@ -16,6 +16,11 @@ function localDayBounds() {
   return { from: start, to: end };
 }
 
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function timeOf(value) {
   return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 }
@@ -24,6 +29,7 @@ export default function TodayTab({ active, households, queueEntries, isOnline, m
   const [serverLogs, setServerLogs] = useState([]);
   const [serverAvailable, setServerAvailable] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [retries, setRetries] = useState([]);
   const { from, to } = useMemo(localDayBounds, []);
 
   useEffect(() => {
@@ -61,6 +67,15 @@ export default function TodayTab({ active, households, queueEntries, isOnline, m
     return () => { cancelled = true; };
   }, [active, from, isOnline, markOffline, markOnline, to]);
 
+  useEffect(() => {
+    if (!active || !isOnline) return undefined;
+    let cancelled = false;
+    api.get('/pickup-logs/retries')
+      .then(({ data }) => { if (!cancelled) setRetries(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!cancelled) setRetries([]); });
+    return () => { cancelled = true; };
+  }, [active, isOnline]);
+
   const logs = useMemo(() => {
     const householdByCode = new Map(households.map((household) => [household.qrCode, household]));
     const queuedUuids = new Set(queueEntries.map((entry) => entry.clientUuid));
@@ -92,8 +107,10 @@ export default function TodayTab({ active, households, queueEntries, isOnline, m
     const segregated = logs.filter((log) => log.status === 'segregated').length;
     const mixed = logs.filter((log) => log.status === 'mixed').length;
     const rejected = logs.filter((log) => log.status === 'rejected').length;
-    const percentage = total ? Math.round((segregated / total) * 100) : 0;
-    return { total, segregated, mixed, rejected, percentage };
+    const noOneHome = logs.filter((log) => log.status === 'not_available').length;
+    const counted = total - noOneHome;
+    const percentage = counted ? Math.round((segregated / counted) * 100) : 0;
+    return { total, segregated, mixed, rejected, noOneHome, percentage };
   }, [logs]);
 
   return (
@@ -105,10 +122,27 @@ export default function TodayTab({ active, households, queueEntries, isOnline, m
         <StatCard value={counts.segregated} label="Segregated" />
         <StatCard value={counts.mixed} label="Mixed" />
         <StatCard value={counts.rejected} label="Rejected" />
+        <StatCard value={counts.noOneHome} label="No one home" />
         <StatCard value={`${counts.percentage}%`} label="Segregated share" />
       </div>
+      {retries.length > 0 && (
+        <Card className="worker-retry-card">
+          <h2 className="worker-subheading">Retry tomorrow ({retries.length})</h2>
+          <p className="worker-help">Nobody was home at the last visit. These pickups are still due.</p>
+          <ul className="worker-log-list">
+            {retries.map((item) => (
+              <li key={item.qrCode}>
+                <p className="worker-list-row__primary">{item.ownerName}</p>
+                <p className="worker-household-card__code">{item.qrCode} - {item.address}</p>
+                {item.awayUntil && item.awayUntil >= localToday() && <p className="worker-help">Away until {item.awayUntil}</p>}
+                {item.preferredWindow && <p className="worker-help">Prefers {item.preferredWindow}</p>}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       {loading && logs.length === 0
-        ? <p className="worker-help">Loading today's pickups…</p>
+        ? <p className="worker-help">Loading today's pickups...</p>
         : logs.length === 0
           ? <EmptyState title="No pickups logged today" description="Completed pickups will appear here." />
           : <ul className="worker-log-list">

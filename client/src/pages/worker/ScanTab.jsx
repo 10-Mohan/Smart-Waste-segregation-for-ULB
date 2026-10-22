@@ -25,6 +25,10 @@ function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 }
 
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 export default function ScanTab({
   household,
   households,
@@ -240,6 +244,12 @@ export default function ScanTab({
                   </div>
                 </div>
               )}
+              {household.awayUntil && household.awayUntil >= localToday() && (
+                <Callout variant="note">The family marked themselves away until {household.awayUntil}. You may want to skip this visit.</Callout>
+              )}
+              {household.preferredWindow && (
+                <p className="worker-help">Prefers pickup in the {household.preferredWindow}.</p>
+              )}
               {!isOnline && <Callout variant="note">This household was loaded from the saved ward list.</Callout>}
             </Card>
 
@@ -263,6 +273,9 @@ export default function ScanTab({
                 <span aria-hidden="true">×</span> Rejected
               </button>
             </div>
+              <Button className="worker-touch-button" variant="secondary" disabled={saving} onClick={() => saveStatus('not_available')}>
+              No one home
+            </Button>
             <button className="worker-link-button" type="button" onClick={scanNext}>Cancel / scan another</button>
             {saving && <Spinner label="Saving pickup" />}
           </div>

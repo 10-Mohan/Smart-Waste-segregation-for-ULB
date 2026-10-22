@@ -11,6 +11,8 @@ function workerHousehold(household) {
     type: household.type,
     wardId: household.wardId,
     active: household.active,
+    awayUntil: household.awayUntil,
+    preferredWindow: household.preferredWindow,
     ward: household.ward ? { id: household.ward.id, name: household.ward.name, code: household.ward.code } : undefined,
     pickupLogs: household.pickupLogs?.map((log) => ({
       id: log.id,
