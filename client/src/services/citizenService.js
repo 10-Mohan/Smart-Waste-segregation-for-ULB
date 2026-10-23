@@ -37,3 +37,15 @@ export function clearCitizenSession() {
   sessionStorage.removeItem(CITIZEN_CODE_KEY);
   sessionStorage.removeItem(CITIZEN_PHONE_LAST4_KEY);
 }
+
+
+export async function rateCitizenPickup(qrCode, phoneLast4, { pickupLogId, stars, comment }) {
+  const { data } = await api.post('/ratings/citizen', {
+    qrCode,
+    phoneLast4,
+    pickupLogId,
+    stars,
+    comment: comment || null,
+  });
+  return data;
+}

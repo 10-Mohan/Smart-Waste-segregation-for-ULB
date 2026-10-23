@@ -4,6 +4,7 @@ import { calculateComplianceFromCounts } from '../services/complianceService.js'
 import { CONSECUTIVE_SEGREGATED_BONUS_INTERVAL } from '../services/pointsService.js';
 import { normalizeAddress, withHouseholdQrAllocation } from '../services/householdService.js';
 import HttpError from '../utils/HttpError.js';
+import { getCitizenRatingContext } from '../services/ratingService.js';
 
 const tipsByStatus = {
   mixed: 'Keep wet and dry waste in separate, clearly marked bins. Rinse recyclable containers before collection.',
@@ -50,8 +51,7 @@ export async function citizenStatus(request, response) {
         separate: true,
         limit: 10,
         order: [['loggedAt', 'DESC']],
-        attributes: ['id', 'status', 'reason', 'loggedAt'],
-      },
+        attributes: ['id', 'status', 'reason', 'loggedAt', 'workerId'],      },
       {
         model: Notification,
         as: 'notifications',
@@ -93,14 +93,14 @@ export async function citizenStatus(request, response) {
     order: [['createdAt', 'DESC']],
     limit: 10,
   });
-
+  
+  const ratingContext = await getCitizenRatingContext(household.pickupLogs);
   response.json({
     household: { name: household.ownerName.split(/\s+/)[0] },
     wardName: household.ward.name,
     ecoPoints: household.ecoPoints,
     currentStatus,
-    logs: household.pickupLogs.map((log) => ({ id: log.id, date: log.loggedAt, status: log.status, reason: log.reason })),
-    notifications: household.notifications,
+    logs: household.pickupLogs.map((log) => ({ id: log.id, date: log.loggedAt, status: log.status, reason: log.reason, ...(ratingContext.get(log.id) || {}) })),    notifications: household.notifications,
     weeklyComplianceScore: weeklyCompliance.total ? weeklyCompliance.compliancePercent : null,
     weeklyComplianceDetails: {
       total: weeklyCompliance.total,

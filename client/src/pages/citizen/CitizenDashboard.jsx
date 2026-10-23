@@ -9,7 +9,7 @@ import Spinner from '../../components/ui/Spinner.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
 import Tabs from '../../components/ui/Tabs.jsx';
 import useDocumentTitle from '../../hooks/useDocumentTitle.js';
-import { getCitizenStatus, updateCitizenAvailability } from '../../services/citizenService.js';
+import { getCitizenStatus, updateCitizenAvailability, rateCitizenPickup } from '../../services/citizenService.js';
 import StatusBadge, { statusLabel } from '../worker/StatusBadge.jsx';
 import CitizenQrSheet from './CitizenQrSheet.jsx';
 import './citizen.css';
@@ -75,6 +75,75 @@ function BalanceChart({ entries }) {
       <polyline points={coordinates} fill="none" stroke="var(--color-brand)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       {balances.length === 1 && <circle cx="50" cy={40 - (balances[0] / maximum) * 34} r="2.5" fill="var(--color-brand)" />}
     </svg>
+  );
+}
+
+function RatingControl({ log, code, phoneLast4, onRated }) {
+  const [stars, setStars] = useState(0);
+  const [comment, setComment] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const { notify } = useToast();
+
+  async function submit() {
+    setSaving(true);
+    setError('');
+    try {
+      await rateCitizenPickup(code, phoneLast4, { pickupLogId: log.id, stars, comment: comment.trim() });
+      notify('Thanks for your feedback', 'good');
+      onRated();
+    } catch (err) {
+      setError(err.response?.status === 409
+        ? 'This pickup was already rated, or the rating window has closed.'
+        : "Couldn't save your rating right now. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (log.rating) {
+    return (
+      <p className="citizen-muted">
+        You rated this pickup {'\u2605'.repeat(log.rating.stars)}{log.rating.comment ? ` - "${log.rating.comment}"` : ''}
+      </p>
+    );
+  }
+  if (!log.canRate) return null;
+
+  return (
+    <div style={{ marginTop: '8px' }}>
+      <p className="citizen-muted">{log.workerFirstName ? `How was ${log.workerFirstName}'s service?` : 'How was this pickup?'}</p>
+      <div role="group" aria-label="Star rating" style={{ display: 'flex', gap: '4px' }}>
+        {[1, 2, 3, 4, 5].map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-label={`${value} star${value > 1 ? 's' : ''}`}
+            aria-pressed={stars === value}
+            onClick={() => setStars(value)}
+            style={{ fontSize: '1.6rem', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: value <= stars ? '#d89b00' : '#b9b9b0' }}
+          >
+            {'\u2605'}
+          </button>
+        ))}
+      </div>
+      {stars > 0 && (
+        <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
+          <input
+            type="text"
+            maxLength={500}
+            placeholder="Add a comment (optional)"
+            aria-label="Comment"
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+          />
+          <Button className="citizen-touch-button" disabled={saving} onClick={submit}>
+            {saving ? 'Sending...' : 'Submit rating'}
+          </Button>
+        </div>
+      )}
+      {error && <p role="alert">{error}</p>}
+    </div>
   );
 }
 
@@ -266,6 +335,13 @@ const CitizenDashboard = forwardRef(function CitizenDashboard({ code, phoneLast4
                   </div>
                   {log.reason && (log.status === 'rejected' || log.status === 'mixed') && <p>{log.reason}</p>}
                   {earned > 0 && <p className="citizen-earned-points">+{earned} points</p>}
+                  {log.workerFirstName && (
+                    <p className="citizen-muted">
+                      {log.status === 'not_available' ? 'Visited by' : 'Collected by'} {log.workerFirstName}
+                      {log.workerAverage ? ` - rated ${log.workerAverage}/5 (${log.workerRatingCount})` : ''}
+                    </p>
+                  )}
+                  <RatingControl log={log} code={code} phoneLast4={phoneLast4} onRated={() => refresh(true)} />
                 </Card>
               </li>
             );

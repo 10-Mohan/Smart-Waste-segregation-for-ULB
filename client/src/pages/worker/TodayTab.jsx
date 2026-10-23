@@ -30,6 +30,7 @@ export default function TodayTab({ active, households, queueEntries, isOnline, m
   const [serverAvailable, setServerAvailable] = useState(true);
   const [loading, setLoading] = useState(false);
   const [retries, setRetries] = useState([]);
+  const [myRatings, setMyRatings] = useState(null);
   const { from, to } = useMemo(localDayBounds, []);
 
   useEffect(() => {
@@ -73,6 +74,15 @@ export default function TodayTab({ active, households, queueEntries, isOnline, m
     api.get('/pickup-logs/retries')
       .then(({ data }) => { if (!cancelled) setRetries(Array.isArray(data) ? data : []); })
       .catch(() => { if (!cancelled) setRetries([]); });
+    return () => { cancelled = true; };
+  }, [active, isOnline]);
+  
+    useEffect(() => {
+    if (!active || !isOnline) return undefined;
+    let cancelled = false;
+    api.get('/ratings/mine')
+      .then(({ data }) => { if (!cancelled) setMyRatings(data); })
+      .catch(() => { if (!cancelled) setMyRatings(null); });
     return () => { cancelled = true; };
   }, [active, isOnline]);
 
@@ -125,6 +135,21 @@ export default function TodayTab({ active, households, queueEntries, isOnline, m
         <StatCard value={counts.noOneHome} label="No one home" />
         <StatCard value={`${counts.percentage}%`} label="Segregated share" />
       </div>
+      {myRatings && myRatings.count > 0 && (
+        <Card className="worker-ratings-card">
+          <h2 className="worker-subheading">My ratings</h2>
+          <p className="worker-list-row__primary">{myRatings.average} / 5 from {myRatings.count} {myRatings.count === 1 ? 'rating' : 'ratings'}</p>
+          {myRatings.recentComments.length > 0 && (
+            <ul className="worker-log-list">
+              {myRatings.recentComments.map((item, index) => (
+                <li key={`${item.date}-${index}`}>
+                  <p className="worker-help">{'\u2605'.repeat(item.stars)} {`"${item.comment}"`}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
       {retries.length > 0 && (
         <Card className="worker-retry-card">
           <h2 className="worker-subheading">Retry tomorrow ({retries.length})</h2>

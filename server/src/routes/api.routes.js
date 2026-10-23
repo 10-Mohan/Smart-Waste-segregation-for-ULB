@@ -6,6 +6,7 @@ import healthRouter from './health.routes.js';
 import householdRouter from './household.routes.js';
 import pickupRouter from './pickup.routes.js';
 import wardRouter from './ward.routes.js';
+import ratingsRouter from './ratings.routes.js';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/pickup-logs', pickupRouter);
 router.use('/citizen', citizenRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/wards', wardRouter);
+router.use('/ratings', ratingsRouter);
 
 export default router;

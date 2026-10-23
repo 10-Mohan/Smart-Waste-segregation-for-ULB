@@ -1,6 +1,7 @@
 import Household from './Household.js';
 import Notification from './Notification.js';
 import PickupLog from './PickupLog.js';
+import PickupRating from './PickupRating.js';
 import PointsLedger from './PointsLedger.js';
 import User from './User.js';
 import Ward from './Ward.js';
@@ -26,10 +27,16 @@ PointsLedger.belongsTo(Household, { as: 'household', foreignKey: 'householdId' }
 PickupLog.hasMany(PointsLedger, { as: 'pointsEntries', foreignKey: 'pickupLogId' });
 PointsLedger.belongsTo(PickupLog, { as: 'pickupLog', foreignKey: 'pickupLogId' });
 
+PickupLog.hasOne(PickupRating, { as: 'rating', foreignKey: 'pickupLogId' });
+PickupRating.belongsTo(PickupLog, { as: 'pickupLog', foreignKey: 'pickupLogId' });
+User.hasMany(PickupRating, { as: 'ratingsReceived', foreignKey: 'workerId' });
+PickupRating.belongsTo(User, { as: 'worker', foreignKey: 'workerId' });
+
 export {
   Household,
   Notification,
   PickupLog,
+  PickupRating,
   PointsLedger,
   User,
   Ward,
