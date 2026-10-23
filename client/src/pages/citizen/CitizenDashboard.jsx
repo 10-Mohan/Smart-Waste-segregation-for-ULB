@@ -9,8 +9,7 @@ import Spinner from '../../components/ui/Spinner.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
 import Tabs from '../../components/ui/Tabs.jsx';
 import useDocumentTitle from '../../hooks/useDocumentTitle.js';
-import { getCitizenStatus, updateCitizenAvailability, rateCitizenPickup } from '../../services/citizenService.js';
-import StatusBadge, { statusLabel } from '../worker/StatusBadge.jsx';
+import { getCitizenStatus, updateCitizenAvailability, rateCitizenPickup, getCitizenLeaderboard } from '../../services/citizenService.js';import StatusBadge, { statusLabel } from '../worker/StatusBadge.jsx';
 import CitizenQrSheet from './CitizenQrSheet.jsx';
 import './citizen.css';
 
@@ -75,6 +74,98 @@ function BalanceChart({ entries }) {
       <polyline points={coordinates} fill="none" stroke="var(--color-brand)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       {balances.length === 1 && <circle cx="50" cy={40 - (balances[0] / maximum) * 34} r="2.5" fill="var(--color-brand)" />}
     </svg>
+  );
+}
+
+function RewardsPanel({ code, phoneLast4, ecoPoints }) {
+  const [board, setBoard] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCitizenLeaderboard(code, phoneLast4)
+      .then((data) => {
+        if (cancelled) return;
+        setBoard(data);
+        setFailed(false);
+      })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [code, phoneLast4, ecoPoints]);
+
+  if (failed) {
+    return <div className="citizen-tab-content"><Callout variant="warning">Rewards could not be loaded right now.</Callout></div>;
+  }
+  if (!board) {
+    return <div className="citizen-tab-content"><Spinner label="Loading rewards" /></div>;
+  }
+
+  const { tier, top, you } = board;
+  const currentMin = tier.tiers.find((item) => item.name === tier.current.name)?.min ?? 0;
+  const span = tier.next ? tier.next.min - currentMin : 1;
+  const progress = tier.next ? Math.max(0, Math.min(100, Math.round(((tier.totalPoints - currentMin) / span) * 100))) : 100;
+
+  return (
+    <div className="citizen-tab-content">
+      <Card>
+        <p className="citizen-kicker">Your reward tier</p>
+        <h2 className="citizen-card-title">{tier.current.name}</h2>
+        <p className="citizen-muted">{tier.current.perk}</p>
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          aria-label="Progress to next tier"
+          style={{ height: '10px', borderRadius: '999px', background: '#e3e3da', overflow: 'hidden', margin: '12px 0 8px' }}
+        >
+          <div style={{ width: `${progress}%`, height: '100%', background: 'var(--color-brand)' }} />
+        </div>
+        <p>
+          {tier.next
+            ? `${tier.pointsToNext} more ${tier.pointsToNext === 1 ? 'point' : 'points'} to reach ${tier.next.name}`
+            : 'You have reached the top tier. Thank you for leading by example!'}
+        </p>
+      </Card>
+
+      <Card>
+        <h2 className="citizen-card-title">Tier ladder</h2>
+        <ul className="citizen-activity-list">
+          {tier.tiers.map((item) => (
+            <li key={item.name}>
+              <p>
+                <strong>{item.name}{item.name === tier.current.name ? ' (you are here)' : ''}</strong>
+                {' '}- from {item.min} points
+              </p>
+              <p className="citizen-muted">{item.perk}</p>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <Card>
+        <h2 className="citizen-card-title">Ward leaderboard - {board.month}</h2>
+        {top.length
+          ? (
+            <ol style={{ margin: 0, paddingLeft: '20px', display: 'grid', gap: '6px' }}>
+              {top.map((row) => (
+                <li key={`${row.rank}-${row.name}`} value={row.rank} style={row.isYou ? { fontWeight: 700 } : undefined}>
+                  {row.name}{row.isYou ? ' (You)' : ''} - {row.monthPoints} points
+                </li>
+              ))}
+            </ol>
+          )
+          : <p className="citizen-muted">No points earned in your ward yet this month. Be the first!</p>}
+        {!you.inTop && (
+          <p style={{ marginTop: '12px' }}>
+            You are #{you.rank} of {you.outOf} households with {you.monthPoints} points this month.
+          </p>
+        )}
+        <p className="citizen-muted" style={{ marginTop: '12px' }}>
+          The leaderboard restarts every month. Your tier is based on your total points.
+        </p>
+      </Card>
+    </div>
   );
 }
 
@@ -431,6 +522,7 @@ const CitizenDashboard = forwardRef(function CitizenDashboard({ code, phoneLast4
     ) },
     { id: 'pickups', label: 'Pickups', content: pickupsContent },
     { id: 'points', label: 'Points', content: pointsContent },
+    { id: 'rewards', label: 'Rewards', content: <RewardsPanel code={code} phoneLast4={phoneLast4} ecoPoints={status.ecoPoints} /> },
     { id: 'messages', label: <span className="citizen-tab-label">Messages{unreadCount > 0 && <span className="citizen-tab-unread" aria-label={`${unreadCount} unread messages`} />}</span>, content: messagesContent },
   ];
 

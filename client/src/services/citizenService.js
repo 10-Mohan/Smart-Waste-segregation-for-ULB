@@ -49,3 +49,8 @@ export async function rateCitizenPickup(qrCode, phoneLast4, { pickupLogId, stars
   });
   return data;
 }
+
+export async function getCitizenLeaderboard(qrCode, phoneLast4) {
+  const { data } = await api.get('/leaderboard', { params: { qrCode, phoneLast4 } });
+  return data;
+}
