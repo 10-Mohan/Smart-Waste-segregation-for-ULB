@@ -13,6 +13,7 @@ const Household = sequelize.define('Household', {
   active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   awayUntil: { type: DataTypes.DATEONLY, allowNull: true },
   preferredWindow: { type: DataTypes.STRING, allowNull: true },
+  email: { type: DataTypes.STRING, allowNull: true, unique: true },
 });
 
 export default Household;
