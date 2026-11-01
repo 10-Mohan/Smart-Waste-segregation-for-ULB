@@ -8,9 +8,11 @@ import pickupRouter from './pickup.routes.js';
 import wardRouter from './ward.routes.js';
 import ratingsRouter from './ratings.routes.js';
 import leaderboardRouter from './leaderboard.routes.js';
+import { identifyCitizen } from '../middleware/citizenAuth.js';
 
 const router = Router();
 
+router.use(identifyCitizen);
 router.use('/health', healthRouter);
 router.use('/auth', authRouter);
 router.use('/households', householdRouter);

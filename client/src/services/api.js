@@ -9,14 +9,14 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem(SESSION_TOKEN_KEY);
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token && !config.headers.Authorization) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    const isLoginRequest = error.config?.citizen || ['/auth/login', '/auth/otp/'].some((path) => error.config?.url?.includes(path));
     if (!error.response) window.dispatchEvent(new Event('waste-api-network-error'));
     if (error.response?.status === 401 && !isLoginRequest) {
       sessionStorage.removeItem(SESSION_TOKEN_KEY);

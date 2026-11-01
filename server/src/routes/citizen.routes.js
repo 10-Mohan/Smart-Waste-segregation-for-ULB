@@ -5,6 +5,7 @@ import { Household, Ward } from '../models/index.js';
 import { citizenStatus, citizenWards, registerCitizenHousehold, updateAvailability } from '../controllers/citizenController.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { validate } from '../middleware/validate.js';
+import { requestCitizenCode, verifyCitizenCode, requestLinkCode, verifyLinkCode } from '../controllers/citizenAuthController.js';
 
 const router = Router();
 const citizenLimiterWindowMinutes = Number(process.env.CITIZEN_STATUS_RATE_LIMIT_WINDOW_MINUTES) || 15;
@@ -26,6 +27,23 @@ const registrationLimiter = rateLimit({
   legacyHeaders: false,
   handler: (_request, response) => response.status(429).json({ error: { message: 'Too many registrations from this connection. Please try again later.' } }),
 });
+
+const tooMany = (message) => (_request, response) => response.status(429).json({ error: { message } });
+const authRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: tooMany('Too many code requests. Try again later.'),
+});
+const authVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: tooMany('Too many attempts. Try again later.'),
+});
+const codeRule = body('code').isString().matches(/^\d{6}$/).withMessage('Enter the 6-digit code.');
 
 router.get('/wards', asyncHandler(citizenWards));
 router.post(
@@ -77,6 +95,40 @@ router.post(
       .withMessage('preferredWindow must be morning, afternoon, or evening.'),
   ),
   asyncHandler(updateAvailability),
+);
+
+router.post(
+  '/auth/request',
+  authRequestLimiter,
+  validate(body('identifier').isString().trim().notEmpty().withMessage('Email or phone is required.')),
+  asyncHandler(requestCitizenCode),
+);
+router.post(
+  '/auth/verify',
+  authVerifyLimiter,
+  validate(body('identifier').isString().trim().notEmpty().withMessage('Email or phone is required.'), codeRule),
+  asyncHandler(verifyCitizenCode),
+);
+router.post(
+  '/auth/link/request',
+  authRequestLimiter,
+  validate(
+    body('qrCode').isString().trim().notEmpty().withMessage('qrCode is required.'),
+    body('phoneLast4').matches(/^\d{4}$/).withMessage('phoneLast4 must contain four digits.'),
+    body('email').isString().trim().notEmpty().withMessage('Email is required.'),
+  ),
+  asyncHandler(requestLinkCode),
+);
+router.post(
+  '/auth/link/verify',
+  authVerifyLimiter,
+  validate(
+    body('qrCode').isString().trim().notEmpty().withMessage('qrCode is required.'),
+    body('phoneLast4').matches(/^\d{4}$/).withMessage('phoneLast4 must contain four digits.'),
+    body('email').isString().trim().notEmpty().withMessage('Email is required.'),
+    codeRule,
+  ),
+  asyncHandler(verifyLinkCode),
 );
 
 export default router;

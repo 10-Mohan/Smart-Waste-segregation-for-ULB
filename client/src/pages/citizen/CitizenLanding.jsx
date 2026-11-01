@@ -6,6 +6,7 @@ import Spinner from '../../components/ui/Spinner.jsx';
 import Tabs from '../../components/ui/Tabs.jsx';
 import QrCameraScanner from '../../components/QrCameraScanner.jsx';
 import RegistrationForm from './RegistrationForm.jsx';
+import { LinkHousehold, SignInWithCode } from './CitizenOtpLogin.jsx';
 import { downloadQr, printCitizenQr, QrLabel } from './CitizenQrSheet.jsx';
 import './citizen.css';
 
@@ -108,8 +109,8 @@ function RegistrationSuccess({ registration, phoneLast4, onOpenDashboard }) {
   );
 }
 
-export default function CitizenLanding({ initialCode = '', initialError = '', initialTab, onVerify }) {
-  const [tab, setTab] = useState(() => initialTab || (initialCode ? 'code' : 'register'));
+export default function CitizenLanding({ initialCode = '', initialError = '', initialTab, onVerify, onSession }) {
+  const [tab, setTab] = useState(() => initialTab || (initialCode ? 'link' : 'signin'));
   const [registration, setRegistration] = useState(null);
   const [phoneLast4, setPhoneLast4] = useState('');
 
@@ -117,7 +118,7 @@ export default function CitizenLanding({ initialCode = '', initialError = '', in
     if (initialTab) {
       setTab(initialTab);
     } else if (initialCode) {
-      setTab('code');
+      setTab('link');
     }
   }, [initialTab, initialCode]);
 
@@ -125,8 +126,10 @@ export default function CitizenLanding({ initialCode = '', initialError = '', in
     return <RegistrationSuccess registration={registration} phoneLast4={phoneLast4} onOpenDashboard={onVerify} />;
   }
 
-  const tabs = [
-    { id: 'code', label: 'I have a code', content: <IHaveCode initialCode={initialCode} initialError={initialError} onVerify={onVerify} /> },
+    const tabs = [
+    { id: 'signin', label: 'Sign in', content: <SignInWithCode initialError={initialError} onSession={onSession} /> },
+    { id: 'link', label: 'First time here?', content: <LinkHousehold initialCode={initialCode} onSession={onSession} /> },
+    { id: 'code', label: 'Use code (old)', content: <IHaveCode initialCode={initialCode} initialError={initialError} onVerify={onVerify} /> },
     {
       id: 'register',
       label: 'Register my household',

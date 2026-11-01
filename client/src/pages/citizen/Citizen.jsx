@@ -6,7 +6,9 @@ import {
   CITIZEN_PHONE_LAST4_KEY,
   clearCitizenSession,
   getCitizenStatus,
+  getCitizenToken,
   saveCitizenSession,
+  saveCitizenToken,
 } from '../../services/citizenService.js';
 import CitizenDashboard from './CitizenDashboard.jsx';
 import CitizenLanding from './CitizenLanding.jsx';
@@ -31,8 +33,9 @@ export default function Citizen() {
   useEffect(() => {
     let active = true;
     const code = sessionStorage.getItem(CITIZEN_CODE_KEY);
-    const phoneLast4 = sessionStorage.getItem(CITIZEN_PHONE_LAST4_KEY);
-    if (!code || !phoneLast4) {
+    const phoneLast4 = sessionStorage.getItem(CITIZEN_PHONE_LAST4_KEY) || '';
+    const hasToken = Boolean(getCitizenToken());
+    if (!code || (!phoneLast4 && !hasToken)) {
       setInitializing(false);
       return () => { active = false; };
     }
@@ -41,15 +44,15 @@ export default function Citizen() {
       .catch((error) => {
         if (!active) return;
         const isStale = error.response?.status === 404 || error.response?.status === 401 || error.response?.status === 403;
+        setLandingCode(code);
+        setLandingTab(hasToken ? 'signin' : 'code');
         if (isStale) {
           clearCitizenSession();
           setVerified(null);
-          setLandingCode(code);
-          setLandingTab('code');
-          setVerificationErrorText("We couldn't find that household. Please check your details or register again.");
+          setVerificationErrorText(hasToken
+            ? 'Your session has expired. Please sign in again.'
+            : "We couldn't find that household. Please check your details or register again.");
         } else {
-          setLandingCode(code);
-          setLandingTab('code');
           setVerificationErrorText(verificationError(error));
         }
       })
@@ -76,20 +79,36 @@ export default function Citizen() {
     }
   }
 
+  async function startSession({ token, household }) {
+    saveCitizenToken(token, household.qrCode);
+    try {
+      const status = await getCitizenStatus(household.qrCode, '');
+      setVerificationErrorText('');
+      setVerified({ code: household.qrCode, phoneLast4: '', status });
+      return true;
+    } catch (error) {
+      clearCitizenSession();
+      return error.response ? 'Signed in, but we could not load your household. Please try again.' : "Can't reach the server right now.";
+    }
+  }
+
   function handleSessionStale(customMessage) {
-    clearCitizenSession();
+    const hadToken = Boolean(getCitizenToken());
     const currentCode = verified?.code || sessionStorage.getItem(CITIZEN_CODE_KEY) || landingCode;
+    clearCitizenSession();
     setVerified(null);
     if (currentCode) setLandingCode(currentCode);
-    setLandingTab('code');
-    setVerificationErrorText(customMessage || "We couldn't find that household. Please check your details or register again.");
+    setLandingTab(hadToken ? 'signin' : 'code');
+    setVerificationErrorText(customMessage || (hadToken
+      ? 'Your session has expired. Please sign in again.'
+      : "We couldn't find that household. Please check your details or register again."));
   }
 
   function switchHousehold() {
     clearCitizenSession();
     setVerified(null);
     setVerificationErrorText('');
-    setLandingTab('code');
+    setLandingTab('signin');
   }
 
   if (initializing) {
@@ -113,6 +132,7 @@ export default function Citizen() {
           initialTab={landingTab}
           initialError={verificationErrorText}
           onVerify={verify}
+          onSession={startSession}
         />}
     </div>
   );

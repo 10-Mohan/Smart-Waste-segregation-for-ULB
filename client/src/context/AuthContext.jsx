@@ -36,6 +36,18 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     return data.user;
   }
+  
+    async function requestCode(channel, identifier) {
+    const { data } = await api.post('/auth/otp/request', { channel, identifier });
+    return data.message;
+  }
+
+  async function loginWithCode(channel, identifier, code) {
+    const { data } = await api.post('/auth/otp/verify', { channel, identifier, code });
+    sessionStorage.setItem(SESSION_TOKEN_KEY, data.token);
+    setUser(data.user);
+    return data.user;
+  }
 
   function logout() {
     sessionStorage.removeItem(SESSION_TOKEN_KEY);
@@ -43,7 +55,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+      <AuthContext.Provider value={{ user, loading, login, logout, requestCode, loginWithCode }}>
       {children}
     </AuthContext.Provider>
   );

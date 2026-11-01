@@ -10,7 +10,7 @@ import { sendSmsCode } from '../services/sms.js';
 
 const phoneEnabled = () => process.env.PHONE_OTP_ENABLED === 'true' || process.env.NODE_ENV !== 'production';
 
-function readInput(body) {
+export function readInput(body) {
   const channel = body.channel;
   if (!['email', 'phone'].includes(channel)) throw new HttpError(400, 'Choose email or phone.');
   if (channel === 'phone' && !phoneEnabled()) {
