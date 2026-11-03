@@ -29,6 +29,14 @@ function messageFrom(requestError, fallback) {
   return requestError.response?.data?.error?.message || fallback;
 }
 
+function destinationFor(role, fromPath) {
+  const home = routeForRole(role);
+  if (!fromPath || fromPath === '/login') return home;
+  if (fromPath.startsWith('/worker') && role !== 'worker') return home;
+  if (fromPath.startsWith('/dashboard') && role === 'worker') return home;
+  return fromPath;
+}
+
 export default function Login() {
   const { login, loginWithCode, requestCode, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -48,7 +56,7 @@ export default function Login() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate(location.state?.from?.pathname || routeForRole(user.role), { replace: true });
+      navigate(destinationFor(user.role, location.state?.from?.pathname), { replace: true });
     }
   }, [authLoading, location.state, navigate, user]);
 
@@ -75,7 +83,7 @@ export default function Login() {
   }
 
   function finishSignIn(signedInUser) {
-    navigate(location.state?.from?.pathname || routeForRole(signedInUser.role), { replace: true });
+    navigate(destinationFor(signedInUser.role, location.state?.from?.pathname), { replace: true });
   }
 
   async function sendCode(event) {
