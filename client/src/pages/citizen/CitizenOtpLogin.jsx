@@ -106,10 +106,12 @@ export function SignInWithCode({ initialError = '', onSession }) {
 
   return (
     <Card className="citizen-access-card">
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <Button type="button" size="sm" variant={channel === 'email' ? undefined : 'secondary'} onClick={() => chooseChannel('email')}>Email</Button>
-        <Button type="button" size="sm" variant={channel === 'phone' ? undefined : 'secondary'} onClick={() => chooseChannel('phone')}>Phone</Button>
-      </div>
+            {phoneEnabled && (
+    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <Button type="button" size="sm" variant={channel === 'email' ? undefined : 'secondary'} onClick={() => chooseChannel('email')}>Email</Button>
+          <Button type="button" size="sm" variant={channel === 'phone' ? undefined : 'secondary'} onClick={() => chooseChannel('phone')}>Phone</Button>
+        </div>
+      )}
       {channel === 'phone' && !phoneEnabled ? (
         <p className="citizen-help">SMS sign-in is coming soon. Please use your email.</p>
       ) : step === 'enter' ? (

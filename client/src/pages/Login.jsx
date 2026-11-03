@@ -143,10 +143,11 @@ export default function Login() {
         <Card className="login-form-card">
           {mode === 'code' ? (
             <>
-              <div className="login-tabs" role="tablist" aria-label="Sign-in method">
-                <button type="button" role="tab" aria-selected={channel === 'email'} className={`login-tab${channel === 'email' ? ' login-tab--active' : ''}`} onClick={() => chooseChannel('email')}>Email</button>
-                <button type="button" role="tab" aria-selected={channel === 'phone'} className={`login-tab${channel === 'phone' ? ' login-tab--active' : ''}`} onClick={() => chooseChannel('phone')}>Phone</button>
-              </div>
+            {phoneEnabled && (
+            <div className="login-tabs" role="tablist" aria-label="Sign-in method">
+                  ... the same two buttons as before ...
+                </div>
+              )}
 
               {channel === 'phone' && !phoneEnabled ? (
                 <p className="login-form__note">SMS sign-in is coming soon. Please use your email for now.</p>
