@@ -19,6 +19,7 @@ import ViolationsLog from './ViolationsLog.jsx';
 import ReasonsBarChart from './ReasonsBarChart.jsx';
 import WorkerScorecards from './WorkerScorecards.jsx';
 import EngagementFunnel from './EngagementFunnel.jsx';
+import RetroTvError from '../../components/ui/RetroTvError.jsx';
 
 import './Dashboard.css';
 
@@ -145,10 +146,14 @@ export default function Dashboard() {
       </div>
 
       {error ? (
-        <div className="dashboard-error">
-          <p>Unable to load dashboard data. Please try again.</p>
+        <RetroTvError
+          code="ERR"
+          message="NO SIGNAL"
+          title="We couldn't load the dashboard"
+          description="Check your connection and try again."
+        >
           <Button onClick={refresh}>Retry</Button>
-        </div>
+        </RetroTvError>
       ) : loading && !data.summary ? (
         <div className="dashboard-loading"><Spinner label="Loading dashboard..." /></div>
       ) : (

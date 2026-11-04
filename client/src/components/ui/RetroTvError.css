@@ -1,0 +1,47 @@
+.retro-tv-error { display: grid; justify-items: center; gap: var(--space-6); padding-block: var(--space-8); text-align: center; }
+
+.retro-tv { position: relative; width: min(100%, 24rem); aspect-ratio: 300 / 230; container-type: inline-size; }
+.retro-tv svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+.retro-tv__ghost { fill: #b9bdb9; opacity: 0.6; font-family: system-ui, sans-serif; font-weight: 200; }
+.retro-tv__rod { stroke: #2b2b2b; stroke-width: 3; stroke-linecap: round; }
+.retro-tv__tip { fill: #8f8f8f; stroke: #2b2b2b; stroke-width: 2; }
+.retro-tv__dome { fill: #e8730c; stroke: #1a1a1a; stroke-width: 3; }
+.retro-tv__shine { fill: #f7b267; opacity: 0.7; }
+.retro-tv__body { fill: #e07b10; stroke: #1a1a1a; stroke-width: 3; }
+.retro-tv__bevel { fill: none; stroke: #f0a050; stroke-width: 2; opacity: 0.6; }
+.retro-tv__frame { fill: #1a1a1a; }
+.retro-tv__panel { fill: #d9892c; stroke: #1a1a1a; stroke-width: 2.5; }
+.retro-tv__knob { fill: #8a5a2b; stroke: #1a1a1a; stroke-width: 2.5; }
+.retro-tv__mark { stroke: #1a1a1a; stroke-width: 2; stroke-linecap: round; }
+.retro-tv__foot { fill: #444; stroke: #1a1a1a; stroke-width: 2; }
+.retro-tv__ground { stroke: #1a1a1a; stroke-width: 3; }
+
+.retro-tv__screen { position: absolute; top: 47.39%; left: 9.67%; width: 55.33%; height: 35.65%; overflow: hidden; border-radius: 0.5rem; background: #000; }
+.retro-tv__noise { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.retro-tv__screen::after {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, rgb(0 0 0 / 14%) 0 1px, transparent 1px 3px);
+  content: '';
+  pointer-events: none;
+}
+.retro-tv__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.15em 0.5em;
+  background: #000;
+  color: #fff;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.8rem;
+  font-size: 3.4cqw;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.retro-tv-error__title { font-size: var(--type-2xl, 1.75rem); }
+.retro-tv-error__description { max-width: 32rem; margin-top: var(--space-2); color: var(--color-ink-muted); }
+.retro-tv-error__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); margin-top: var(--space-5); }
