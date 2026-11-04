@@ -1,0 +1,38 @@
+.engagement-funnel { padding: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.engagement-funnel__header h2 { font-size: var(--type-xl); }
+.engagement-funnel__header p { margin-top: var(--space-2); color: var(--color-ink-muted); font-size: var(--type-xs); }
+.engagement-funnel__message { margin-top: var(--space-5); color: var(--color-ink-muted); }
+
+.engagement-funnel__chart { position: relative; height: 16rem; margin-top: var(--space-6); }
+.engagement-funnel__bands { position: absolute; inset: 0; width: 100%; height: 100%; animation: engagement-funnel-reveal 800ms cubic-bezier(0.3, 0.7, 0.2, 1) both; }
+.engagement-funnel__halo { fill: var(--color-brand, #1f5446); opacity: 0.16; }
+.engagement-funnel__band { fill: var(--color-brand, #1f5446); opacity: 0.85; }
+
+.engagement-funnel__stages { position: relative; z-index: 1; display: grid; height: 100%; margin: 0; padding: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; }
+.engagement-funnel__stage { display: grid; grid-template-rows: auto 1fr auto auto; justify-items: center; padding-block: var(--space-3); text-align: center; }
+.engagement-funnel__stage:nth-child(odd) { background: rgb(0 0 0 / 3%); }
+.engagement-funnel__count { color: var(--color-ink); font-size: var(--type-xl); font-weight: 700; }
+.engagement-funnel__chip { align-self: center; padding: 0.2rem 0.75rem; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-ink); font-size: var(--type-sm); font-weight: 700; }
+.engagement-funnel__label { color: var(--color-ink); font-size: var(--type-sm); font-weight: 600; }
+.engagement-funnel__drop { color: var(--color-ink-muted); font-size: var(--type-xs); }
+.engagement-funnel__bar { display: none; }
+
+@keyframes engagement-funnel-reveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@media (max-width: 40rem) {
+  .engagement-funnel__chart { height: auto; }
+  .engagement-funnel__bands { display: none; }
+  .engagement-funnel__stages { grid-template-columns: 1fr; gap: var(--space-4); }
+  .engagement-funnel__stage { grid-template-rows: none; grid-template-columns: 1fr auto; justify-items: start; row-gap: var(--space-1); text-align: left; background: none; }
+  .engagement-funnel__stage:nth-child(odd) { background: none; }
+  .engagement-funnel__chip { grid-column: 2; grid-row: 1; }
+  .engagement-funnel__label, .engagement-funnel__drop { grid-column: 1 / -1; }
+  .engagement-funnel__bar { display: block; grid-column: 1 / -1; height: 0.6rem; border-radius: 999px; background: var(--color-brand, #1f5446); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .engagement-funnel__bands { animation: none; }
+}

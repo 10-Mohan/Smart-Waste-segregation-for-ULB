@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from 'express-validator';
 import {
+  engagementFunnel,
   exportCsv,
   hotspots,
   reasons,
@@ -40,5 +41,6 @@ router.get(
   asyncHandler(violations),
 );
 router.get('/reasons', ...dashboardAccess, validate(...periodValidation), asyncHandler(reasons));
+router.get('/funnel/engagement', ...dashboardAccess, validate(...periodValidation), asyncHandler(engagementFunnel));
 
 export default router;

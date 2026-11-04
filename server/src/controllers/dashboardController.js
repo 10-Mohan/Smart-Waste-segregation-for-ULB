@@ -8,6 +8,7 @@ import {
   getWardSummaries,
 } from '../services/dashboardService.js';
 import { scopedWardId } from '../utils/access.js';
+import { getEngagementFunnel } from '../services/funnelService.js';
 
 function dashboardFilters(request) {
   return {
@@ -77,4 +78,8 @@ export async function exportCsv(request, response) {
   response.setHeader('Content-Type', 'text/csv; charset=utf-8');
   response.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   response.send(`${lines.join('\r\n')}\r\n`);
+}
+
+export async function engagementFunnel(request, response) {
+  response.json(await getEngagementFunnel({ wardId: scopedWardId(request.user, request.query.wardId) }));
 }

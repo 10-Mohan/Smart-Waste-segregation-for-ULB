@@ -18,6 +18,7 @@ import Hotspots from './Hotspots.jsx';
 import ViolationsLog from './ViolationsLog.jsx';
 import ReasonsBarChart from './ReasonsBarChart.jsx';
 import WorkerScorecards from './WorkerScorecards.jsx';
+import EngagementFunnel from './EngagementFunnel.jsx';
 
 import './Dashboard.css';
 
@@ -170,6 +171,10 @@ export default function Dashboard() {
             <ReasonsBarChart data={data.reasons} loading={loading} />
           </div>
           
+          <div className="dashboard-row">
+            <EngagementFunnel wardId={wardId} />
+          </div>
+
           <div className="dashboard-row">
             <WorkerScorecards wardId={wardId} />
           </div>
