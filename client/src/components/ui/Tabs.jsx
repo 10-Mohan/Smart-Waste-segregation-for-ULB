@@ -1,10 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import './Tabs.css';
+import SketchUnderline from './SketchUnderline.jsx';
 
 export default function Tabs({ items, defaultTab, onChange, label = 'Content tabs' }) {
   const generatedId = useId();
   const [activeId, setActiveId] = useState(defaultTab || items[0]?.id);
   const buttons = useRef([]);
+  const listRef = useRef(null);
   const activeItem = items.find((item) => item.id === activeId) || items[0];
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function Tabs({ items, defaultTab, onChange, label = 'Content tab
 
   return (
     <div className="ui-tabs">
-      <div className="ui-tabs__list" role="tablist" aria-label={label}>
+      <div className="ui-tabs__list" role="tablist" aria-label={label} ref={listRef}>
         {items.map((item, index) => {
           const selected = item.id === activeItem?.id;
           return (
@@ -61,6 +63,7 @@ export default function Tabs({ items, defaultTab, onChange, label = 'Content tab
             </button>
           );
         })}
+        <SketchUnderline containerRef={listRef} activeKey={activeItem?.id} itemSelector='[role="tab"][aria-selected="true"]' offset={-10} />
       </div>
       {items.map((item) => (
         <div
