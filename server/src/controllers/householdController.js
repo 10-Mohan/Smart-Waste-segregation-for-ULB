@@ -3,20 +3,51 @@ import { Household, PickupLog, Ward, sequelize } from '../models/index.js';
 import HttpError from '../utils/HttpError.js';
 import { scopedWardId } from '../utils/access.js';
 import { withHouseholdQrAllocation } from '../services/householdService.js';
+import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../middleware/auth.js';
+import { issueCode, checkCode, normalizeIdentifier } from '../services/otpService.js';
+import { sendEmailCode } from '../services/mailer.js';
+
+const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const GENERIC_MESSAGE = 'If this account exists, a code has been sent.';
 
 const householdIncludesWard = [{ model: Ward, as: 'ward' }];
 
+
+export async function verifyHouseholdEmail(request, response) {
+  const { email, code } = request.body;
+  if (!email) throw new HttpError(400, 'Email is required.');
+  if (!code) throw new HttpError(400, 'Verification code is required.');
+  if (!emailPattern.test(email)) throw new HttpError(400, 'Enter a valid email address.');
+  // Verify OTP code
+  await checkCode({ channel: 'email', identifier: email, purpose: 'household-register', code });
+  // Activate household
+  const household = await Household.findOne({ where: { email } });
+  if (!household) throw new HttpError(404, 'Household not found.');
+  await household.update({ active: true });
+  // Issue JWT session
+  const token = jwt.sign({ hid: household.id, typ: 'citizen' }, getJwtSecret(), { expiresIn: '7d' });
+  response.json({ token, household: { qrCode: household.qrCode, ownerFirstName: household.ownerName.trim().split(/\s+/)[0], email: household.email } });
+}
+
 export async function createHousehold(request, response) {
-  const { ownerName, phone, address, type } = request.body;
+  const { ownerName, phone, address, type, email } = request.body;
+  const normalizedEmail = email ? String(email).trim().toLowerCase() : null;
+  if (normalizedEmail) {
+    if (!emailPattern.test(normalizedEmail)) throw new HttpError(400, 'Enter a valid email address.');
+    const existing = await Household.findOne({
+      where: sequelize.where(sequelize.fn('lower', sequelize.col('email')), normalizedEmail),
+    });
+    if (existing) throw new HttpError(409, 'Email already in use.');
+  }
   const wardId = scopedWardId(request.user, request.body.wardId);
-  const household = await withHouseholdQrAllocation(wardId, ({ qrCode, transaction }) => Household.create({
-    ownerName,
-    phone,
-    address,
-    type,
-    wardId,
-    qrCode,
-  }, { transaction }));
+  const household = await withHouseholdQrAllocation(wardId, ({ qrCode, transaction }) =>
+    Household.create({ ownerName, phone, address, type, email: normalizedEmail, active: true, wardId, qrCode }, { transaction })
+  );
+  if (normalizedEmail) {
+    const code = await issueCode({ channel: 'email', identifier: normalizedEmail, purpose: 'household-register' });
+    await sendEmailCode(normalizedEmail, code);
+  }
   const result = await Household.findByPk(household.id, { include: householdIncludesWard });
   response.status(201).json({ household: result });
 }

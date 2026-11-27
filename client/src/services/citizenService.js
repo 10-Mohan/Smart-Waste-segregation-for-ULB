@@ -74,6 +74,9 @@ export async function verifyLinkCode(qrCode, phoneLast4, email, code) {
   return data;
 }
 
+export const requestClaimCode = requestLinkCode;
+export const verifyClaimCode = verifyLinkCode;
+
 export function saveCitizenSession(qrCode, phoneLast4) {
   sessionStorage.removeItem(CITIZEN_TOKEN_KEY);
   sessionStorage.setItem(CITIZEN_CODE_KEY, qrCode);

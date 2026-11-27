@@ -142,12 +142,12 @@ export function SignInWithCode({ initialError = '', onSession }) {
           backLabel={`Change ${channel === 'email' ? 'email' : 'number'}`}
         />
       )}
-      <p className="citizen-help">First time signing in with email? Use the "First time here?" tab to link your household once.</p>
+      <p className="citizen-help">First time signing in with email? Use the "Claim your household" tab to add your email once.</p>
     </Card>
   );
 }
 
-export function LinkHousehold({ initialCode = '', onSession }) {
+export function ClaimHousehold({ initialCode = '', onSession }) {
   const [qrCode, setQrCode] = useState(initialCode.trim().toUpperCase());
   const [last4, setLast4] = useState('');
   const [email, setEmail] = useState('');
@@ -162,13 +162,17 @@ export function LinkHousehold({ initialCode = '', onSession }) {
 
   async function send(event) {
     event?.preventDefault();
-    if (!qrCode.trim()) { setError('Enter the household code on your bin.'); return; }
+    const normalizedCode = qrCode.trim().toUpperCase();
+    if (!normalizedCode) { setError('Enter the household code on your bin.'); return; }
     if (!/^\d{4}$/.test(last4)) { setError('Enter the last 4 digits of your phone number.'); return; }
-    if (!email.trim()) { setError('Enter the email you want to use.'); return; }
+    if (!email.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      setError('Enter a valid email address.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
-      await requestLinkCode(qrCode.trim().toUpperCase(), last4, email.trim());
+      await requestLinkCode(normalizedCode, last4, email.trim());
       setStep('verify');
       setCode('');
       startCooldown();
@@ -182,10 +186,11 @@ export function LinkHousehold({ initialCode = '', onSession }) {
 
   async function verify(event) {
     event.preventDefault();
+    const normalizedCode = qrCode.trim().toUpperCase();
     setSubmitting(true);
     setError('');
     try {
-      const result = await verifyLinkCode(qrCode.trim().toUpperCase(), last4, email.trim(), code);
+      const result = await verifyLinkCode(normalizedCode, last4, email.trim(), code);
       const outcome = await onSession(result);
       if (outcome !== true) setError(typeof outcome === 'string' ? outcome : 'Unable to continue. Please try again.');
     } catch (requestError) {
@@ -199,18 +204,18 @@ export function LinkHousehold({ initialCode = '', onSession }) {
     <Card className="citizen-access-card">
       {step === 'enter' ? (
         <form className="citizen-form" onSubmit={send} noValidate>
-          <p className="citizen-help">Do this once. Confirm your household, add your email, and from then on you can sign in with just an emailed code.</p>
+          <p className="citizen-help">Existing household with no email? Confirm your household code and phone number, add your email, and from then on you can sign in with just an emailed code.</p>
           <div className="citizen-field">
-            <label htmlFor="link-code">Household code</label>
-            <input id="link-code" autoCapitalize="characters" autoComplete="off" placeholder="HH-W01-001" value={qrCode} onChange={(event) => { setQrCode(event.target.value.toUpperCase()); setError(''); }} />
+            <label htmlFor="claim-code">Household code</label>
+            <input id="claim-code" autoCapitalize="characters" autoComplete="off" placeholder="HH-W01-001" value={qrCode} onChange={(event) => { setQrCode(event.target.value.toUpperCase()); setError(''); }} />
           </div>
           <div className="citizen-field">
-            <label htmlFor="link-last4">Last 4 digits of phone</label>
-            <input id="link-last4" inputMode="numeric" autoComplete="off" maxLength={4} value={last4} onChange={(event) => { setLast4(event.target.value.replace(/\D/g, '').slice(0, 4)); setError(''); }} />
+            <label htmlFor="claim-last4">Last 4 digits of phone</label>
+            <input id="claim-last4" inputMode="numeric" autoComplete="off" maxLength={4} value={last4} onChange={(event) => { setLast4(event.target.value.replace(/\D/g, '').slice(0, 4)); setError(''); }} />
           </div>
           <div className="citizen-field">
-            <label htmlFor="link-email">Your email address</label>
-            <input id="link-email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); }} />
+            <label htmlFor="claim-email">Your email address</label>
+            <input id="claim-email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); }} />
           </div>
           {error && <p className="citizen-error" role="alert">{error}</p>}
           <Button className="citizen-touch-button" type="submit" disabled={submitting}>
@@ -228,3 +233,5 @@ export function LinkHousehold({ initialCode = '', onSession }) {
     </Card>
   );
 }
+
+export const LinkHousehold = ClaimHousehold;

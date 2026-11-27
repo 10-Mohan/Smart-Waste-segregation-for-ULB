@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import {
   createHousehold,
+  verifyHouseholdEmail,
   getHousehold,
   getHouseholdByQr,
   getHouseholdQr,
@@ -19,12 +20,31 @@ router.post(
   '/',
   validate(
     body('ownerName').isString().trim().notEmpty().withMessage('Owner name is required.'),
+    body('email').optional({ nullable: true }).isString().trim().custom(email => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)).withMessage('Enter a valid email address.'),
     body('phone').matches(/^[6-9]\d{9}$/).withMessage('Phone must be a valid Indian 10-digit mobile number.'),
     body('address').isString().trim().notEmpty().withMessage('Address is required.'),
     body('type').isIn(['residential', 'commercial']).withMessage('Type must be residential or commercial.'),
     body('wardId').isInt({ min: 1 }).withMessage('A valid wardId is required.'),
   ),
-  asyncHandler(createHousehold),
+  asyncHandler(createHousehold)
+);
+
+router.post(
+  '/verify-email',
+  validate(
+    body('email')
+      .isString()
+      .trim()
+      .notEmpty()
+      .custom(email => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+      .withMessage('Enter a valid email address.'),
+    body('code')
+      .isString()
+      .trim()
+      .notEmpty()
+      .withMessage('Verification code is required.')
+  ),
+  asyncHandler(verifyHouseholdEmail)
 );
 router.get(
   '/',

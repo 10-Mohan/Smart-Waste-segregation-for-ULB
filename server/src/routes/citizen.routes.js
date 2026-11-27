@@ -2,7 +2,14 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { body, query } from 'express-validator';
 import { Household, Ward } from '../models/index.js';
-import { citizenStatus, citizenWards, registerCitizenHousehold, updateAvailability } from '../controllers/citizenController.js';
+import {
+  citizenStatus,
+  citizenWards,
+  registerCitizenHousehold,
+  updateAvailability,
+  verifyCitizenRegistration,
+  resendCitizenRegistrationCode,
+} from '../controllers/citizenController.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { validate } from '../middleware/validate.js';
 import { requestCitizenCode, verifyCitizenCode, requestLinkCode, verifyLinkCode } from '../controllers/citizenAuthController.js';
@@ -51,6 +58,7 @@ router.post(
   registrationLimiter,
   validate(
     body('ownerName').isString().trim().isLength({ min: 2, max: 80 }).withMessage('Name must be between 2 and 80 characters.'),
+    body('email').isString().trim().notEmpty().withMessage('Email is required.').matches(/^[^@\s]+@[^@\s]+\.[^@\s]+$/).withMessage('Enter a valid email address.'),
     body('phone').matches(/^[6-9]\d{9}$/).withMessage('Enter a valid 10-digit Indian mobile number.'),
     body('address').isString().trim().isLength({ min: 5, max: 200 }).withMessage('Address must be between 5 and 200 characters.'),
     body('type').isIn(['residential', 'commercial']).withMessage('Choose home or shop/business.'),
@@ -58,6 +66,35 @@ router.post(
     body('consent').custom((consent) => consent === true).withMessage('Please agree to use of your household details.'),
   ),
   asyncHandler(registerCitizenHousehold),
+);
+
+router.post(
+  '/register/verify',
+  authVerifyLimiter,
+  validate(
+    body('email').isString().trim().notEmpty().withMessage('Email is required.'),
+    codeRule,
+  ),
+  asyncHandler(verifyCitizenRegistration),
+);
+
+router.post(
+  '/verify-email',
+  authVerifyLimiter,
+  validate(
+    body('email').isString().trim().notEmpty().withMessage('Email is required.'),
+    codeRule,
+  ),
+  asyncHandler(verifyCitizenRegistration),
+);
+
+router.post(
+  '/register/resend',
+  authRequestLimiter,
+  validate(
+    body('email').isString().trim().notEmpty().withMessage('Email is required.'),
+  ),
+  asyncHandler(resendCitizenRegistrationCode),
 );
 
 router.get(
@@ -120,7 +157,28 @@ router.post(
   asyncHandler(requestLinkCode),
 );
 router.post(
+  '/auth/claim/request',
+  authRequestLimiter,
+  validate(
+    body('qrCode').isString().trim().notEmpty().withMessage('qrCode is required.'),
+    body('phoneLast4').matches(/^\d{4}$/).withMessage('phoneLast4 must contain four digits.'),
+    body('email').isString().trim().notEmpty().withMessage('Email is required.'),
+  ),
+  asyncHandler(requestLinkCode),
+);
+router.post(
   '/auth/link/verify',
+  authVerifyLimiter,
+  validate(
+    body('qrCode').isString().trim().notEmpty().withMessage('qrCode is required.'),
+    body('phoneLast4').matches(/^\d{4}$/).withMessage('phoneLast4 must contain four digits.'),
+    body('email').isString().trim().notEmpty().withMessage('Email is required.'),
+    codeRule,
+  ),
+  asyncHandler(verifyLinkCode),
+);
+router.post(
+  '/auth/claim/verify',
   authVerifyLimiter,
   validate(
     body('qrCode').isString().trim().notEmpty().withMessage('qrCode is required.'),

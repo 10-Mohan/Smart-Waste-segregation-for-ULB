@@ -8,6 +8,7 @@ function validate(values) {
   const errors = {};
   if (values.ownerName.trim().length < 2 || values.ownerName.trim().length > 80) errors.ownerName = 'Enter a name between 2 and 80 characters.';
   if (!/^[6-9]\d{9}$/.test(values.phone)) errors.phone = 'Enter a valid 10-digit Indian mobile number.';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(values.email)) errors.email = 'Enter a valid email address.';
   if (values.address.trim().length < 5 || values.address.trim().length > 200) errors.address = 'Enter an address between 5 and 200 characters.';
   if (!values.wardId) errors.wardId = 'Choose your ward.';
   if (!values.consent) errors.consent = 'Please agree before continuing.';
@@ -17,7 +18,7 @@ function validate(values) {
 export default function RegistrationForm({ onSuccess }) {
   const [wards, setWards] = useState([]);
   const [wardsLoading, setWardsLoading] = useState(true);
-  const [values, setValues] = useState({ ownerName: '', phone: '', address: '', type: 'residential', wardId: '', consent: false });
+  const [values, setValues] = useState({ ownerName: '', phone: '', email: '', address: '', type: 'residential', wardId: '', consent: false });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -48,10 +49,11 @@ export default function RegistrationForm({ onSuccess }) {
       const result = await registerCitizenHousehold({
         ownerName: values.ownerName.trim(),
         phone: values.phone,
+        email: values.email,
         address: values.address.trim(),
         type: values.type,
         wardId: Number(values.wardId),
-        consent: true,
+        consent: values.consent,
       });
       onSuccess(result, values.phone.slice(-4));
     } catch (error) {
@@ -78,6 +80,11 @@ export default function RegistrationForm({ onSuccess }) {
           <input id="citizen-phone" inputMode="numeric" autoComplete="tel-national" pattern="[6-9][0-9]{9}" maxLength={10} required value={values.phone} aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? 'citizen-phone-error' : 'citizen-phone-help'} onChange={(event) => setField('phone', event.target.value.replace(/\D/g, '').slice(0, 10))} />
           <span id="citizen-phone-help" className="citizen-field-help">10 digits, starting with 6-9</span>
           {errors.phone && <span className="citizen-field-error" id="citizen-phone-error">{errors.phone}</span>}
+        </div>
+        <div className="citizen-field">
+          <label htmlFor="citizen-email">Email address</label>
+          <input id="citizen-email" type="email" maxLength={100} required value={values.email} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'citizen-email-error' : undefined} onChange={(event) => setField('email', event.target.value)} />
+          {errors.email && <span className="citizen-field-error" id="citizen-email-error">{errors.email}</span>}
         </div>
         <div className="citizen-field">
           <label htmlFor="citizen-address">Address</label>

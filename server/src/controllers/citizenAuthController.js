@@ -78,6 +78,9 @@ function readLinkEmail(body) {
 export async function requestLinkCode(request, response) {
   const email = readLinkEmail(request.body);
   const household = await findByLegacyDetails(request.body.qrCode, request.body.phoneLast4);
+  if (household.email) {
+    throw new HttpError(400, 'This household already has an email linked. Please sign in with your email.');
+  }
   const taken = await Household.findOne({
     where: { [Op.and]: [emailMatch(email), { id: { [Op.ne]: household.id } }] },
   });
@@ -91,9 +94,12 @@ export async function requestLinkCode(request, response) {
 export async function verifyLinkCode(request, response) {
   const email = readLinkEmail(request.body);
   const household = await findByLegacyDetails(request.body.qrCode, request.body.phoneLast4);
+  if (household.email) {
+    throw new HttpError(400, 'This household already has an email linked. Please sign in with your email.');
+  }
   await checkCode({ channel: 'email', identifier: email, purpose: 'citizen-link', code: request.body.code });
   try {
-    await household.update({ email });
+    await household.update({ email, active: true });
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
       throw new HttpError(409, 'That email is already linked to another household.');
@@ -102,3 +108,6 @@ export async function verifyLinkCode(request, response) {
   }
   sendSession(response, household);
 }
+
+export const requestClaimCode = requestLinkCode;
+export const verifyClaimCode = verifyLinkCode;
